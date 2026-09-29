@@ -3,6 +3,19 @@ voln-vp — implementation checklist
 full plans live in .hermes/plans/ — this file is the at-a-glance tracker
 follow the spec's phase order. stop gates between phases are real.
 
+2026-09-28 — prebuilt boot/test milestone
+  [x] QEMU adapters launch explicit prebuilt inputs; no source-tree builds
+  [x] real bounded boot tests for all three QEMU targets
+  [x] unique UART/log captures, input hashes, version and command evidence
+  [x] QEMU disk/firmware snapshots and timeout/signal process cleanup
+  [x] Renode explicit input, fixed test marker, Monitor/panic failure checks
+  [x] adapter regression checks, including spaces and stale captures
+  [!] live Pi 5 image: 10 MiB embedded-rootfs allocation panic
+  [!] live x86_64 image: BOOT_FATAL code=root-filesystem-invalid
+  [ ] compatible QEMU AArch64 and RISC-V prebuilt-image validation
+  Evidence: docs/probes/2026-09-28-prebuilt-boot.md
+  Adapter checks are not guest boot PASS. AxiomOS remains read-only.
+
 phase 0 — precondition
   [x] design spec read (docs/superpowers/specs/2026-07-14-voln-vp-design.md)
   [x] axiomOS sibling repo confirmed buildable
@@ -35,7 +48,8 @@ phase 2 — CLI + adapter contract + virt-pi5 boot
   [x] 2.12 virt-pi5.repl + boot script
   [x] 2.12a direct-kernel EL1 contract; Renode high-half translation verified
   [!] 2.13 verify boot-to-userspace — BLOCKED: current axiomOS image panics
-        allocating the embedded 20 MiB rootfs before EL0.
+        allocating the embedded rootfs before EL0 (20 MiB July image;
+        10 MiB image found on disk in September).
         Evidence: docs/probes/2026-07-30-phase2-virt-pi5-boot.md
 
 phase 3 — RP1 models + driver suite

@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-AXIOMOS_ROOT="${AXIOMOS_ROOT:-/home/utkarsh/Work/axiomOS}"
-
-if [[ ! -f "$AXIOMOS_ROOT/Cargo.toml" ]]; then
-  echo "axiomOS repository not found: $AXIOMOS_ROOT" >&2
-  exit 2
-fi
-
-cd -- "$AXIOMOS_ROOT"
-exec cargo xtask run virt -- "$@"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+exec python3 "$SCRIPT_DIR/../../../backends/qemu/runner.py" aarch64 run "$@"
