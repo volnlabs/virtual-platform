@@ -1,7 +1,19 @@
 voln-vp — implementation checklist
 
-full plans live in .hermes/plans/ — this file is the at-a-glance tracker
+plans: docs/superpowers/plans/2026-09-30-runtime-testing-platform.md
+this file is the at-a-glance tracker
 follow the spec's phase order. stop gates between phases are real.
+
+2026-09-30 — artifact identity and baseline CI (first tranche)
+  [x] versioned JSON manifest and shared stdlib validator
+  [x] AArch64 ELF, feature profile, hashes and embedded-rootfs range checks
+  [x] private staged copies; no producer inputs are modified
+  [x] terminal result.json for observed success, failure and unsupported inputs
+  [x] --artifact-manifest CLI forwarding, conflict rejection and honest dry-run
+  [x] adapter/CLI CI workflow and retained stand-in test evidence
+  [ ] hosted workflow completion (requires a push; not claimed from local tests)
+  [ ] attributable AxiomOS producer bundle and pinned execution profile
+  Manifest identity is not guest qualification. All qualification claims remain empty.
 
 2026-09-28 — prebuilt boot/test milestone
   [x] QEMU adapters launch explicit prebuilt inputs; no source-tree builds
@@ -53,12 +65,15 @@ phase 2 — CLI + adapter contract + virt-pi5 boot
         Evidence: docs/probes/2026-07-30-phase2-virt-pi5-boot.md
 
 phase 3 — RP1 models + driver suite
+  First guest milestone: strict single-core GPIO/PWM. Remaining peripherals
+  and full multicore machine coverage follow only when that milestone is green.
   MODEL UNIT WORK UNBLOCKED: the corrected kernel reaches RP1 initialization.
   Guest integration remains blocked by 2.13. Audit found no installed
   RP2040/Pico model; `picosoc` is PicoRV32, and interconnect/PCIe modeling
   requires C# rather than a Renode request-based Python peripheral.
   [ ] 3.1 RP2040 reuse audit (BLOCKER for 3.2-3.6)
-  [ ] 3.2 PCIe RC python peripheral (5-day budget)
+  [ ] 3.2 PCIe RC/endpoint C# model (5-day investigation budget)
+  [ ] 3.12 strict-mode enforcement (required with the first model)
   [ ] 3.3 RP1 GPIO (TDD)
   [ ] 3.4 RP1 PWM with capture (TDD)
   [ ] 3.5 RP1 I²C + imu fake (TDD)
@@ -67,8 +82,7 @@ phase 3 — RP1 models + driver suite
   [ ] 3.8 robot: GPIO toggle readback
   [ ] 3.9 robot: PWM sweep capture
   [ ] 3.10 robot: I²C IMU + SPI loopback
-  [ ] 3.11 robot: determinism check
-  [ ] 3.12 strict-mode enforcement
+  [ ] 3.11 robot: canonical actuator/audit event determinism (single core first)
   [ ] 3.13 PCIe flat-map fallback (DECISION gate, only if 3.2 stalls)
   [ ] 3.14 full driver suite green
 
@@ -96,7 +110,7 @@ phase 5 — CI hardening, nightly, error handling
   [ ] 5.4 verify.sh local wrapper
   [ ] 5.5 error-handling audit
   [ ] 5.6 UART dump on simulator failure (TDD)
-  [ ] 5.7 GH Actions per-commit workflow
+  [x] 5.7 GH Actions adapter/CLI workflow; guest jobs still gated
   [ ] 5.8 GH Actions nightly workflow
   [ ] 5.9 CI docs
   [ ] 5.10 verify pipeline green

@@ -4,6 +4,9 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("invalid arguments: {0}")]
+    InvalidArguments(String),
+
     #[error("backend not found: {0}")]
     BackendNotFound(String),
 

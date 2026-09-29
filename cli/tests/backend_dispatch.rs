@@ -131,3 +131,59 @@ fn dry_run_resolves_without_launching_adapter() {
         .stdout(predicates::str::contains("board:   virt"))
         .stdout(predicates::str::contains("run.sh"));
 }
+
+#[cfg(unix)]
+#[test]
+fn manifest_and_context_are_forwarded_without_parsing_artifacts() {
+    let temporary = make_repo();
+    let adapter = temporary.path().join("backends/qemu/adapters/test.sh");
+    fs::write(&adapter, "#!/bin/sh\nprintf '%s\\n' \"$VOLN_VP_ARTIFACT_MANIFEST\" \"$VOLN_VP_BOARD\" \"$VOLN_VP_VERB\"\n").unwrap();
+    let manifest = temporary.path().join("bundle with spaces/build.json");
+    Command::cargo_bin("voln-vp")
+        .unwrap()
+        .env("VOLN_VP_ROOT", temporary.path())
+        .env_remove("VOLN_VP_ARTIFACT_MANIFEST")
+        .args(["test", "--board", "virt", "--artifact-manifest"])
+        .arg(&manifest)
+        .assert()
+        .success()
+        .stdout(format!("{}\nvirt\ntest\n", manifest.display()));
+}
+
+#[cfg(unix)]
+#[test]
+fn conflicting_manifest_selection_fails_before_launch() {
+    let temporary = make_repo();
+    Command::cargo_bin("voln-vp")
+        .unwrap()
+        .env("VOLN_VP_ROOT", temporary.path())
+        .env("VOLN_VP_ARTIFACT_MANIFEST", "environment.json")
+        .args(["test", "--board", "virt", "--artifact-manifest", "cli.json"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "conflicts with VOLN_VP_ARTIFACT_MANIFEST",
+        ));
+}
+
+#[cfg(unix)]
+#[test]
+fn dry_run_shows_manifest_without_running_or_validating_it() {
+    let temporary = make_repo();
+    Command::cargo_bin("voln-vp")
+        .unwrap()
+        .env("VOLN_VP_ROOT", temporary.path())
+        .env_remove("VOLN_VP_ARTIFACT_MANIFEST")
+        .args([
+            "run",
+            "--board",
+            "virt",
+            "--dry-run",
+            "--artifact-manifest",
+            "missing.json",
+        ])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("missing.json"))
+        .stdout(predicates::str::contains("not validated"));
+}
