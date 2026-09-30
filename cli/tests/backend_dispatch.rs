@@ -168,6 +168,93 @@ fn conflicting_manifest_selection_fails_before_launch() {
 
 #[cfg(unix)]
 #[test]
+fn runtime_mode_and_scenario_are_forwarded_and_validated() {
+    let temporary = make_repo();
+    let adapter = temporary.path().join("backends/qemu/adapters/test.sh");
+    fs::write(
+        &adapter,
+        "#!/bin/sh\nprintf '%s\\n' \"$VOLN_VP_TEST_MODE\" \"$VOLN_VP_SCENARIO\"\n",
+    )
+    .unwrap();
+    Command::cargo_bin("voln-vp")
+        .unwrap()
+        .env("VOLN_VP_ROOT", temporary.path())
+        .env_remove("VOLN_VP_TEST_MODE")
+        .env_remove("VOLN_VP_SCENARIO")
+        .args([
+            "test",
+            "--board",
+            "virt",
+            "--mode",
+            "runtime",
+            "--scenario",
+            "suite with spaces.robot",
+        ])
+        .assert()
+        .success()
+        .stdout("runtime\nsuite with spaces.robot\n");
+    for args in [
+        vec!["test", "--board", "virt", "--mode", "runtime"],
+        vec!["test", "--board", "virt", "--scenario", "suite.robot"],
+        vec![
+            "run",
+            "--board",
+            "virt",
+            "--mode",
+            "runtime",
+            "--scenario",
+            "suite.robot",
+        ],
+    ] {
+        Command::cargo_bin("voln-vp")
+            .unwrap()
+            .env("VOLN_VP_ROOT", temporary.path())
+            .env_remove("VOLN_VP_TEST_MODE")
+            .env_remove("VOLN_VP_SCENARIO")
+            .args(args)
+            .assert()
+            .failure();
+    }
+    Command::cargo_bin("voln-vp")
+        .unwrap()
+        .env("VOLN_VP_ROOT", temporary.path())
+        .env("VOLN_VP_TEST_MODE", "boot")
+        .args([
+            "test",
+            "--board",
+            "virt",
+            "--mode",
+            "runtime",
+            "--scenario",
+            "suite.robot",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("conflicts"));
+    Command::cargo_bin("voln-vp")
+        .unwrap()
+        .env("VOLN_VP_ROOT", temporary.path())
+        .env_remove("VOLN_VP_TEST_MODE")
+        .env_remove("VOLN_VP_SCENARIO")
+        .args([
+            "test",
+            "--board",
+            "virt",
+            "--mode",
+            "runtime",
+            "--scenario",
+            "missing.robot",
+            "--dry-run",
+        ])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(
+            "scenario: missing.robot (not validated)",
+        ));
+}
+
+#[cfg(unix)]
+#[test]
 fn dry_run_shows_manifest_without_running_or_validating_it() {
     let temporary = make_repo();
     Command::cargo_bin("voln-vp")
