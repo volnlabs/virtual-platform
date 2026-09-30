@@ -132,8 +132,11 @@ validation. No target is declared boot-ready from mocked tests.
 
 The [September 30 identified virt build](docs/probes/2026-09-30-identified-virt-build.md)
 produced an attributable rootfs but failed to link the matching kernel because
-the guest's virt linker script omits `__kernel_end`. No guest launch occurred;
-the producer bundle and three-boot gate remain blocked on that AxiomOS fix.
+the guest's virt linker script omits `__kernel_end`.
+The [subsequent linker fix and boot attempts](docs/probes/2026-09-30-virt-linker-fix.md)
+produced a validated bundle, but all three launches timed out. Entry debugging
+found a Pi-specific UART store before virt startup; guest qualification remains
+blocked on the AxiomOS boot-entry path.
 
 See the [implementation checklist](TODO_NOW.md),
 [original risk gate](docs/probes/2026-07-30-armv8a-risk-gate.md), and

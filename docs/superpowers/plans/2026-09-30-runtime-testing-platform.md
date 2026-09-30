@@ -13,8 +13,9 @@
 **Implementation status (September 30):** Tasks 1–3 have a local consumer
 implementation and regression checks. Hosted CI passed at `a5c5423` (run
 `36642831486`). The [identified AxiomOS build](../../probes/2026-09-30-identified-virt-build.md)
-failed to link the virt kernel; the producer handshake remains incomplete and
-no guest qualification is claimed.
+failed to link the virt kernel. A subsequent isolated linker fix produced a
+validated bundle, but [three launches timed out](../../probes/2026-09-30-virt-linker-fix.md)
+at the guest entry path. No guest qualification is claimed.
 Tasks 4–8 remain future work gated as described below.
 
 ## Global constraints

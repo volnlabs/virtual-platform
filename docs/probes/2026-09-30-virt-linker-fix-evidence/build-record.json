@@ -1,0 +1,116 @@
+{
+  "source_commit": "a6f48d167437f94807899c53e2f2b1c92abd8b24",
+  "source_dirty": false,
+  "source_directory": "/tmp/axiomos-producer-b8953b5",
+  "repository": "https://github.com/pro-utkarshM/axiomOS",
+  "toolchain": "rustc 1.98.0-nightly (4c9d2bfe4 2026-07-01)\nbinary: rustc\ncommit-hash: 4c9d2bfe4ad7a65669098754964aaebe0ec1ced2\ncommit-date: 2026-07-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.0-nightly\nLLVM version: 22.1.8",
+  "cargo": "cargo 1.98.0-nightly (a335d47ff 2026-06-26)",
+  "trust_key": "RFC 8032 public CI fixture; not a production trust root",
+  "trust_key_sha256": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+  "environment": {
+    "CARGO_TARGET_DIR": "/tmp/axiomos-target-a6f48d1",
+    "CARGO_BUILD_JOBS": "2",
+    "AXIOM_BPF_TRUSTED_KEY_PATH": "/tmp/axiomos-virt-a6f48d1/ci-public-key.bin",
+    "AXIOM_ARTIFACT_PATHS": "/tmp/axiomos-virt-a6f48d1/artifact-paths.env"
+  },
+  "commands": [
+    [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--release",
+      "--target",
+      "aarch64-unknown-none",
+      "--no-default-features",
+      "-p",
+      "axiomos",
+      "--features",
+      "aarch64_deps"
+    ],
+    [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--release",
+      "--target",
+      "aarch64-unknown-none",
+      "--no-default-features",
+      "-p",
+      "kernel",
+      "--features",
+      "virt,cloud-profile"
+    ]
+  ],
+  "steps": [
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--target",
+        "aarch64-unknown-none",
+        "--no-default-features",
+        "-p",
+        "axiomos",
+        "--features",
+        "aarch64_deps"
+      ],
+      "started_at": 1790728390.2906377,
+      "log": "build-0.log",
+      "exit_code": 0,
+      "finished_at": 1790728430.893118
+    },
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--target",
+        "aarch64-unknown-none",
+        "--no-default-features",
+        "-p",
+        "kernel",
+        "--features",
+        "virt,cloud-profile"
+      ],
+      "started_at": 1790728430.893316,
+      "log": "build-1.log",
+      "exit_code": 0,
+      "finished_at": 1790728466.7410455
+    }
+  ],
+  "source_dirty_after": false,
+  "artifacts": {
+    "kernel": {
+      "path": "kernel.elf",
+      "size": 893120,
+      "sha256": "af93df7a57cee7edd863486ba4f00b2b154a9e63891ae1b9684830d0c65e920f"
+    },
+    "rootfs": {
+      "path": "rootfs.img",
+      "size": 20971520,
+      "sha256": "b91d956007415e50962605c6104a9228abf45a942e5fdd237874ca9bf84dafd6"
+    }
+  },
+  "feature_tree_command": [
+    "cargo",
+    "tree",
+    "--locked",
+    "--offline",
+    "-p",
+    "kernel",
+    "--target",
+    "aarch64-unknown-none",
+    "--no-default-features",
+    "--features",
+    "virt,cloud-profile",
+    "--format",
+    "{p} features=[{f}]"
+  ]
+}

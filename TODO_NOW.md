@@ -13,8 +13,9 @@ follow the spec's phase order. stop gates between phases are real.
   [x] adapter/CLI CI workflow and retained stand-in test evidence
   [x] hosted workflow completion (run 36642831486 passed at a5c5423)
   [ ] attributable AxiomOS producer bundle and pinned execution profile
-  [!] clean b8953b5 virt build: rootfs built; kernel link lacks __kernel_end
-  Evidence: docs/probes/2026-09-30-identified-virt-build.md
+  [x] isolated AxiomOS linker fix a6f48d1; matching bundle built and retained
+  [!] three fresh virt launches time out; Pi UART store faults at guest entry
+  Evidence: docs/probes/2026-09-30-virt-linker-fix.md
   Manifest identity is not guest qualification. All qualification claims remain empty.
 
 2026-09-28 — prebuilt boot/test milestone
