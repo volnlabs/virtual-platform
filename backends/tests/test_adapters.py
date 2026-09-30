@@ -88,6 +88,52 @@ else:
 '''
 
 
+FAKE_ROBOT = r'''#!/usr/bin/env python3
+import json, os, pathlib, subprocess, sys, time
+root = pathlib.Path(os.environ["FAKE_ROOT"])
+mode = os.environ.get("FAKE_MODE", "success")
+(root / "invocation.json").write_text(json.dumps(sys.argv))
+(root / "pid").write_text(str(os.getpid()))
+out = pathlib.Path(sys.argv[sys.argv.index("--results-dir") + 1])
+out.mkdir()
+(out.parent / "uart.log").write_text("=== axiomos eBPF init ===\n")
+if mode == "exit": sys.exit(7)
+if mode == "timeout": time.sleep(60)
+if mode == "boot_only": sys.exit(0)
+status = "FAIL" if mode == "assertion" else "SKIP" if mode == "skip" else "PASS"
+test = '<test name="runtime assertion"><status status="' + status + '"/></test>'
+if mode == "empty": test = ""
+suite_status = "FAIL" if mode == "teardown" else "PASS"
+xml = '<robot><suite>' + test + '<status status="' + suite_status + '"/></suite></robot>'
+if mode == "malformed": xml = "<robot>"
+(out / "robot_output.xml").write_text(xml)
+for name in ("log.html", "report.html"):
+    (out / name).write_text("retained report")
+if mode == "incomplete": (out / "report.html").unlink()
+if mode == "fatal":
+    (out.parent / "uart.log").write_text("BOOT_FATAL after completion\n")
+if mode == "emulator_error":
+    (out / "emulator.log").write_text("[ERROR] peripheral failure\n")
+if mode.startswith("native_"):
+    (out / "emulator.log").write_text({"native_panic": "PANIC: guest crashed",
+                                      "native_panicked": "guest panicked at main.rs:1",
+                                      "native_command": "No such command: invalid"}[mode])
+if mode in ("orphan", "shutdown_fatal"):
+    code = """import os, pathlib, signal, sys, time
+root = pathlib.Path(os.environ['FAKE_ROOT'])
+def terminate(number, frame):
+    pathlib.Path(sys.argv[1]).write_text('BOOT_FATAL during cleanup\\n')
+    sys.exit(0)
+signal.signal(signal.SIGTERM, terminate if sys.argv[2] == 'shutdown_fatal' else signal.SIG_IGN)
+(root / 'helper-ready').write_text('yes')
+time.sleep(60)
+"""
+    child = subprocess.Popen([sys.executable, "-c", code, str(out.parent / "uart.log"), mode])
+    (root / "child-pid").write_text(str(child.pid))
+    while not (root / "helper-ready").exists(): time.sleep(.01)
+'''
+
+
 class AdapterTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="voln-vp tests ")
@@ -102,6 +148,9 @@ class AdapterTests(unittest.TestCase):
             executable = self.bin / name
             executable.write_text(FAKE)
             executable.chmod(0o755)
+        robot = self.bin / "renode-test"
+        robot.write_text(FAKE_ROBOT)
+        robot.chmod(0o755)
         cargo = self.bin / "cargo"
         cargo.write_text('#!/bin/sh\nprintf invoked > "$FAKE_ROOT/cargo-called"\nexit 99\n')
         cargo.chmod(0o755)
@@ -168,6 +217,48 @@ class AdapterTests(unittest.TestCase):
     def test_qemu_marker_can_arrive_in_separate_reads(self):
         self.env["FAKE_MODE"] = "fragment"
         self.assertEqual(self.invoke("qemu").returncode, 0)
+
+    def runtime(self):
+        scenario = self.root / "scenario with spaces.robot"
+        scenario.write_text("*** Test Cases ***\nExplicit Completion\n    Fail    stand-in only\n")
+        self.env.update(VOLN_VP_TEST_MODE="runtime", VOLN_VP_SCENARIO=str(scenario))
+
+    def test_runtime_modes_reject_unsupported_or_conflicting_requests(self):
+        self.runtime()
+        self.assertEqual(self.invoke("qemu").returncode, 2)
+        self.assertEqual(self.reports()[-1]["outcome"], "unsupported")
+        self.assertFalse((self.root / "invocation.json").exists())
+        for backend in ("qemu", "renode"):
+            self.assertNotEqual(self.invoke(backend, "run").returncode, 0)
+        self.env["VOLN_VP_TEST_MODE"] = "boot"
+        self.assertNotEqual(self.invoke("renode").returncode, 0)
+
+    def test_native_runtime_requires_complete_passing_robot_evidence(self):
+        self.runtime()
+        for mode, expected in (("success", 0), ("boot_only", 1), ("assertion", 1),
+                               ("skip", 1), ("empty", 1), ("teardown", 1),
+                               ("malformed", 1), ("incomplete", 1), ("fatal", 1),
+                               ("emulator_error", 1), ("native_panic", 1),
+                               ("native_panicked", 1), ("native_command", 1),
+                               ("exit", 7), ("timeout", 124)):
+            with self.subTest(mode=mode):
+                self.env.update(FAKE_MODE=mode, VOLN_VP_TIMEOUT="0.3s")
+                result = self.invoke("renode")
+                self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+        reports = self.reports()
+        self.assertTrue(all(r["mode"] == "runtime" and r["completed"] for r in reports))
+        self.assertEqual(sum(r["outcome"] == "pass" for r in reports), 1)
+        self.assertTrue(all(r["qualification_claims"] == [] for r in reports))
+
+    def test_runtime_cleanup_handles_children_and_late_fatal(self):
+        self.runtime()
+        for mode, expected in (("orphan", 0), ("shutdown_fatal", 1)):
+            with self.subTest(mode=mode):
+                (self.root / "helper-ready").unlink(missing_ok=True)
+                self.env["FAKE_MODE"] = mode
+                result = self.invoke("renode")
+                self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+                self.assert_stopped(int((self.root / "child-pid").read_text()))
 
     def test_version_failure_retains_diagnostic(self):
         self.env["FAKE_MODE"] = "version_exit"

@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 
 from artifacts import Unsupported, prepare_inputs, sha256
 
@@ -38,7 +39,7 @@ class RunResult:
         self.path = self.directory / "result.json"
         self.data = {"schema_version": 1, "run_id": self.directory.name,
                      "backend": backend, "board": board, "architecture": arch, "verb": verb,
-                     "mode": "boot", "completed": False, "identity": "unvalidated",
+                     "mode": os.environ.get("VOLN_VP_TEST_MODE", "boot"), "completed": False, "identity": "unvalidated",
                      "qualification_claims": [], "outcome": None, "reason": "run incomplete",
                      "exit_code": None, "boot_contract": None, "observed_milestones": [],
                      "inputs": {}, "execution": {}, "evidence": []}
@@ -78,6 +79,25 @@ class RunResult:
     def prepare(self, extra):
         self.provenance()
         backend, arch = self.data["backend"], self.data["architecture"]
+        mode, scenario = self.data["mode"], os.environ.get("VOLN_VP_SCENARIO")
+        if mode not in ("boot", "runtime"):
+            raise ValueError("VOLN_VP_TEST_MODE must be boot or runtime")
+        if mode == "boot" and scenario is not None:
+            raise ValueError("boot mode does not accept VOLN_VP_SCENARIO")
+        if mode == "runtime":
+            if self.data["verb"] != "test" or not scenario:
+                raise ValueError("runtime requires test and VOLN_VP_SCENARIO")
+            if backend == "qemu":
+                raise Unsupported("QEMU runtime has no bound guest completion interface")
+            if extra:
+                raise ValueError("runtime does not accept raw emulator arguments")
+            suite = Path(scenario).resolve(strict=True)
+            if suite.suffix != ".robot" or not suite.is_file():
+                raise ValueError("Renode runtime scenario must be a .robot file")
+            staged = self.directory / "scenario.robot"
+            shutil.copyfile(suite, staged)
+            self.data["scenario"] = {"source_path": str(suite), "path": str(staged), "sha256": sha256(staged)}
+            self.save()
         manifest = os.environ.get("VOLN_VP_ARTIFACT_MANIFEST")
         if "," in str(self.directory) and backend == "qemu":
             raise ValueError("commas in QEMU artifact directory are unsupported")
@@ -125,6 +145,23 @@ class RunResult:
                                   **settings}
         self.save()
 
+    def robot_result(self):
+        directory = self.directory / "robot"
+        for name in ("robot_output.xml", "log.html", "report.html"):
+            if not (directory / name).is_file():
+                raise ValueError(f"missing Robot evidence: {name}")
+        root = ET.parse(directory / "robot_output.xml").getroot()
+        suites, tests = root.findall("suite"), root.findall(".//test")
+        if root.tag != "robot" or not suites or not tests:
+            raise ValueError("Robot result contains no completed suite/tests")
+        if any(node.find("status") is None or node.find("status").get("status") != "PASS"
+               for node in suites + tests):
+            raise ValueError("Robot suite/test failed, skipped, or incomplete")
+        if root.findall("./errors/msg[@level='ERROR']"):
+            raise ValueError("Robot reported execution errors")
+        self.data["scenario_result"] = {"passed_tests": len(tests), "output": "robot/robot_output.xml"}
+        self.save()
+
     def finish(self, code, reason, unsupported=False):
         if self.data["completed"]:
             return
@@ -147,7 +184,8 @@ class RunResult:
         self.data["evidence"] = sorted(str(p.relative_to(self.directory)) for p in self.directory.rglob("*") if p.is_file() and p.name != "result.tmp")
         self.save()
         if code == 0:
-            print("PASS: boot observation; guest qualification is not established", flush=True)
+            observation = "native runtime suite" if self.data["mode"] == "runtime" else "boot observation"
+            print(f"PASS: {observation}; guest qualification is not established", flush=True)
 
 
 def main():
@@ -160,18 +198,21 @@ def main():
             result.prepare(extra)
         elif operation == "execution":
             result = RunResult.load(directory)
-            result.execution(args, virtual_seconds=os.environ.get("VOLN_VP_VIRTUAL_TIME", "0.1"),
+            result.execution(args, virtual_seconds=None if result.data["mode"] == "runtime" else os.environ.get("VOLN_VP_VIRTUAL_TIME", "0.1"),
                              timeout=os.environ.get("VOLN_VP_TIMEOUT", "90s"),
                              cpu="cortex-a78", cores=1, ram_bytes=0x200000000, entry="EL1", semihosting=False)
+        elif operation == "robot-result":
+            result = RunResult.load(directory)
+            result.robot_result()
         elif operation == "finish":
             result = RunResult.load(directory)
             result.finish(int(args[0]), args[1])
         else:
             raise ValueError(f"unknown evidence operation: {operation}")
         return 0
-    except (OSError, ValueError) as error:
+    except (OSError, ValueError, ET.ParseError) as error:
         print(f"FAIL: {error}", file=sys.stderr)
-        if result is not None:
+        if result is not None and operation != "robot-result":
             result.finish(2, str(error), isinstance(error, Unsupported))
         return 2
 

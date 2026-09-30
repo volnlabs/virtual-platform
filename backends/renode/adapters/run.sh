@@ -7,7 +7,10 @@ BOOT_SCRIPT="$REPO_ROOT/backends/renode/scripts/boot-virt-pi5.resc"
 TIMEOUT="${VOLN_VP_TIMEOUT:-90s}"
 VIRTUAL_TIME="${VOLN_VP_VIRTUAL_TIME:-0.1}"
 VERB="${VOLN_VP_VERB:-run}"
+MODE="${VOLN_VP_TEST_MODE:-boot}"
 MARKER='=== axiomos eBPF init ==='
+PANIC_PATTERN='kernel panicked|V04_PANIC|PANIC:|panicked at|BOOT_FATAL'
+ERROR_PATTERN='\[(ERROR|FATAL)\]|There was an error|Error while|Unhandled exception|Could not execute|Could not tokenize|No such command'
 if [[ "$VERB" == run ]]; then
   MARKER="${VOLN_VP_BOOT_MARKER:-$MARKER}"
 fi
@@ -101,6 +104,11 @@ for binary in renode timeout realpath sha256sum; do
     exit 3
   fi
 done
+if [[ "$MODE" == runtime ]] && ! command -v renode-test >/dev/null; then
+  RESULT_REASON="renode-test is not on PATH"
+  echo "$RESULT_REASON" >&2
+  exit 3
+fi
 
 if [[ ! "$TIMEOUT" =~ ^[0-9]+([.][0-9]+)?[smhd]?$ ]] || [[ ! "$TIMEOUT" =~ [1-9] ]]; then
   RESULT_REASON="VOLN_VP_TIMEOUT must be a positive duration (for example 90s)"
@@ -108,7 +116,7 @@ if [[ ! "$TIMEOUT" =~ ^[0-9]+([.][0-9]+)?[smhd]?$ ]] || [[ ! "$TIMEOUT" =~ [1-9]
   exit 4
 fi
 
-if [[ ! "$VIRTUAL_TIME" =~ ^[0-9]+([.][0-9]+)?$ ]] || [[ ! "$VIRTUAL_TIME" =~ [1-9] ]]; then
+if [[ "$MODE" == boot ]] && { [[ ! "$VIRTUAL_TIME" =~ ^[0-9]+([.][0-9]+)?$ ]] || [[ ! "$VIRTUAL_TIME" =~ [1-9] ]]; }; then
   RESULT_REASON="VOLN_VP_VIRTUAL_TIME must be a positive number of virtual seconds"
   echo "$RESULT_REASON" >&2
   exit 4
@@ -117,7 +125,7 @@ fi
 # The CLI reparses its positional script as Monitor syntax, not as an argv
 # path. Support spaces explicitly and reject other Monitor metacharacters.
 MONITOR_PATH_PATTERN='^[[:alnum:]_./ -]+$'
-if [[ ! "$ARTIFACT_ROOT" =~ $MONITOR_PATH_PATTERN ]]; then
+if [[ ! "$ARTIFACT_ROOT" =~ $MONITOR_PATH_PATTERN || ! "$REPO_ROOT" =~ $MONITOR_PATH_PATTERN ]]; then
   RESULT_REASON="Renode artifact directory supports letters, digits, spaces, and _./- only"
   echo "$RESULT_REASON" >&2
   exit 4
@@ -138,7 +146,8 @@ WRAPPER_ARG="${WRAPPER// /\\ }"
 printf '%s\n' \
   "\$axiomos_kernel=$KERNEL_ARG" \
   "\$virt_pi5_dtb=$DTB_ARG" \
-  'include @backends/renode/scripts/boot-virt-pi5.resc' \
+  "\$virt_pi5_platform=\"$REPO_ROOT/boards/virt-pi5/renode/virt-pi5.repl\"" \
+  "include \"$BOOT_SCRIPT\"" \
   >"$WRAPPER"
 
 sha256sum -- "$KERNEL" "$DTB" "$BOOT_SCRIPT" \
@@ -146,6 +155,14 @@ sha256sum -- "$KERNEL" "$DTB" "$BOOT_SCRIPT" \
 COMMAND=("$(command -v renode)" --config "$RUN_DIR/renode.config" --disable-gui --plain -P 0
   "$@" "$WRAPPER_ARG"
   -e "sysbus.uart0 CreateFileBackend $CAPTURE_ARG true; emulation RunFor \"$VIRTUAL_TIME\"; quit")
+if [[ "$MODE" == runtime ]]; then
+  printf '%s\n' "sysbus.uart0 CreateFileBackend $CAPTURE_ARG true" >>"$WRAPPER"
+  COMMAND=("$(command -v renode-test)" --jobs=1 --keep-renode-output --save-logs always
+    --results-dir "$RUN_DIR/robot"
+    --variable "AXIOMOS_KERNEL:$KERNEL" --variable "VOLN_VP_DTB:$DTB"
+    --variable "VOLN_VP_BOOT_SCRIPT:$WRAPPER" --variable "VOLN_VP_RUN_DIR:$RUN_DIR"
+    "$RUN_DIR/scenario.robot")
+fi
 {
   printf 'cwd: %s\ntimeout: %s\nmarker: %s\ncommand: ' "$REPO_ROOT" "$TIMEOUT" "$MARKER"
   printf '%q ' "${COMMAND[@]}"
@@ -167,11 +184,24 @@ RENODE_STATUS=0
 run_bounded "$TIMEOUT" "$RENODE_LOG" "${COMMAND[@]}" || RENODE_STATUS=$?
 
 if (( RENODE_STATUS == 0 )); then
-  if grep -Eiq 'kernel panicked|V04_PANIC|PANIC:|panicked at|BOOT_FATAL' "$CAPTURE" ||
-     grep -Eiq '\[(ERROR|FATAL)\]|There was an error|Error while|Unhandled exception|Could not execute|Could not tokenize|No such command' "$RENODE_LOG"; then
+  if grep -Eiq "$PANIC_PATTERN" "$CAPTURE" ||
+     grep -Eiq "$PANIC_PATTERN|$ERROR_PATTERN" "$RENODE_LOG"; then
     RESULT_REASON="kernel panic or Renode error observed"
     echo "FAIL: $RESULT_REASON" >&2
     RENODE_STATUS=1
+  elif [[ "$MODE" == runtime ]]; then
+    if grep -REiq --include='*.log' "$PANIC_PATTERN|$ERROR_PATTERN" "$RUN_DIR/robot"; then
+      RESULT_REASON="error observed in native Renode logs"
+      RENODE_STATUS=1
+    elif python3 "$REPO_ROOT/backends/results.py" robot-result "$RUN_DIR" >"$RUN_DIR/robot-result.log" 2>&1; then
+      RESULT_REASON="native Robot suite passed after cleanup"
+      BOOT_SUCCESS=1
+      exit 0
+    else
+      RESULT_REASON="native Robot result missing, incomplete, or failed"
+      cat "$RUN_DIR/robot-result.log" >&2
+      RENODE_STATUS=1
+    fi
   elif grep -Fq -- "$MARKER" "$CAPTURE"; then
     RESULT_REASON="required boot marker observed"
     BOOT_SUCCESS=1

@@ -83,7 +83,32 @@ pub fn execute(
     args: &[String],
     dry_run: bool,
     artifact_manifest: Option<&Path>,
+    mode: Option<&str>,
+    scenario: Option<&Path>,
 ) -> Result<()> {
+    let inherited_mode = std::env::var("VOLN_VP_TEST_MODE").ok();
+    let inherited_scenario = std::env::var_os("VOLN_VP_SCENARIO").map(PathBuf::from);
+    if mode
+        .zip(inherited_mode.as_deref())
+        .is_some_and(|(a, b)| a != b)
+        || scenario
+            .zip(inherited_scenario.as_deref())
+            .is_some_and(|(a, b)| a != b)
+    {
+        return Err(Error::InvalidArguments(
+            "mode/scenario conflicts with adapter environment".into(),
+        ));
+    }
+    let mode = mode.or(inherited_mode.as_deref()).unwrap_or("boot");
+    let scenario = scenario.or(inherited_scenario.as_deref());
+    if !matches!(mode, "boot" | "runtime")
+        || (mode == "runtime" && (spec.verb != Verb::Test || scenario.is_none()))
+        || (mode == "boot" && scenario.is_some())
+    {
+        return Err(Error::InvalidArguments(
+            "runtime requires test --scenario; boot does not accept a scenario".into(),
+        ));
+    }
     let inherited = std::env::var_os("VOLN_VP_ARTIFACT_MANIFEST").map(PathBuf::from);
     if let (Some(selected), Some(environment)) = (artifact_manifest, inherited.as_deref()) {
         if selected != environment {
@@ -98,6 +123,10 @@ pub fn execute(
         println!("board:   {}", spec.board_name);
         println!("adapter: {}", spec.verb_path.display());
         println!("args:    {args:?}");
+        println!("mode:    {mode}");
+        if let Some(path) = scenario {
+            println!("scenario: {} (not validated)", path.display());
+        }
         if let Some(path) = manifest {
             println!("artifact manifest: {} (not validated)", path.display());
         }
@@ -109,7 +138,11 @@ pub fn execute(
     command
         .args(args)
         .env("VOLN_VP_BOARD", &spec.board_name)
+        .env("VOLN_VP_TEST_MODE", mode)
         .env("VOLN_VP_VERB", spec.verb.as_str());
+    if let Some(path) = scenario {
+        command.env("VOLN_VP_SCENARIO", path);
+    }
     if let Some(path) = manifest {
         command.env("VOLN_VP_ARTIFACT_MANIFEST", path);
     }

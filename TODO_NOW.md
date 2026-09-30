@@ -4,6 +4,14 @@ plans: docs/superpowers/plans/2026-09-30-runtime-testing-platform.md
 this file is the at-a-glance tracker
 follow the spec's phase order. stop gates between phases are real.
 
+2026-09-30 — native runtime suite transport
+  [x] explicit boot/runtime CLI mode and native scenario path
+  [x] QEMU runtime unsupported until guest completion interface is bound
+  [x] Renode Robot runner, fresh XML/HTML evidence, watchdog and cleanup
+  [x] real native runner positive and deliberately failed assertion checks
+  [ ] qualified guest readiness/command/correlated-completion scenarios
+  Scope: docs/contracts/runtime-scenarios.md; AxiomOS remains read-only.
+
 2026-09-30 — artifact identity and baseline CI (first tranche)
   [x] versioned JSON manifest and shared stdlib validator
   [x] AArch64 ELF, feature profile, hashes and embedded-rootfs range checks

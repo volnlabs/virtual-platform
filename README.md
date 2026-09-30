@@ -112,6 +112,13 @@ timeout). Renode retains `uart.log`, `renode.log`, `inputs.sha256`, `version.log
 
 ## Verification and guest readiness
 
+Boot smoke remains the default. Renode also accepts an explicit native Robot
+suite: `test --board virt-pi5 --mode runtime --scenario /path/to/suite.robot`.
+It waits for Robot's assertions and cleanup rather than a boot banner; QEMU
+runtime is explicitly unsupported until its guest interface is bound. See the
+[runtime suite contract](docs/contracts/runtime-scenarios.md) for inputs,
+timeouts, evidence and the distinction between suite success and qualification.
+
 ```sh
 cargo test --workspace --offline
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s backends/tests -v
