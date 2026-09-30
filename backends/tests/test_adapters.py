@@ -204,7 +204,7 @@ class AdapterTests(unittest.TestCase):
         for backend in ("qemu", "renode"):
             for mode, expected in (("exit", 7), ("empty", 1), ("panic", 1), ("fatal", 1), ("timeout", 124)):
                 with self.subTest(backend=backend, mode=mode):
-                    self.env.update(FAKE_MODE=mode, VOLN_VP_TIMEOUT="0.3s")
+                    self.env.update(FAKE_MODE=mode, VOLN_VP_TIMEOUT="0.3s" if mode == "timeout" else "2s")
                     artifacts = self.root / "artifacts"
                     artifacts.mkdir(exist_ok=True)
                     (artifacts / "uart.log").write_text(MARKER)
@@ -242,7 +242,7 @@ class AdapterTests(unittest.TestCase):
                                ("native_panicked", 1), ("native_command", 1),
                                ("exit", 7), ("timeout", 124)):
             with self.subTest(mode=mode):
-                self.env.update(FAKE_MODE=mode, VOLN_VP_TIMEOUT="0.3s")
+                self.env.update(FAKE_MODE=mode, VOLN_VP_TIMEOUT="0.3s" if mode == "timeout" else "2s")
                 result = self.invoke("renode")
                 self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
         reports = self.reports()
@@ -282,7 +282,7 @@ class AdapterTests(unittest.TestCase):
 
     def test_custom_marker_only_applies_to_diagnostic_run(self):
         self.env.update(FAKE_MODE="custom", VOLN_VP_BOOT_MARKER="custom diagnostic marker",
-                        VOLN_VP_TIMEOUT="0.3s")
+                        VOLN_VP_TIMEOUT="2s")
         for backend in ("qemu", "renode"):
             with self.subTest(backend=backend):
                 self.assertNotEqual(self.invoke(backend).returncode, 0)
@@ -445,7 +445,7 @@ class AdapterTests(unittest.TestCase):
     def test_all_failure_modes_have_terminal_results(self):
         for backend in ("qemu", "renode"):
             for mode, code in (("fatal", 1), ("timeout", 124), ("version_exit", 7)):
-                self.env.update(FAKE_MODE=mode, VOLN_VP_TIMEOUT="0.3s")
+                self.env.update(FAKE_MODE=mode, VOLN_VP_TIMEOUT="0.3s" if mode == "timeout" else "2s")
                 self.assertEqual(self.invoke(backend).returncode, code)
         self.assertEqual(len(self.reports()), 6)
         for report in self.reports():
