@@ -78,16 +78,42 @@ pub fn resolve_target_for(
     })
 }
 
-pub fn execute(spec: &LaunchSpec, args: &[String], dry_run: bool) -> Result<()> {
+pub fn execute(
+    spec: &LaunchSpec,
+    args: &[String],
+    dry_run: bool,
+    artifact_manifest: Option<&Path>,
+) -> Result<()> {
+    let inherited = std::env::var_os("VOLN_VP_ARTIFACT_MANIFEST").map(PathBuf::from);
+    if let (Some(selected), Some(environment)) = (artifact_manifest, inherited.as_deref()) {
+        if selected != environment {
+            return Err(Error::InvalidArguments(
+                "--artifact-manifest conflicts with VOLN_VP_ARTIFACT_MANIFEST".into(),
+            ));
+        }
+    }
+    let manifest = artifact_manifest.or(inherited.as_deref());
     if dry_run {
         println!("backend: {}", spec.backend_name);
         println!("board:   {}", spec.board_name);
         println!("adapter: {}", spec.verb_path.display());
         println!("args:    {args:?}");
+        if let Some(path) = manifest {
+            println!("artifact manifest: {} (not validated)", path.display());
+        }
+        println!("dry run: adapter not executed");
         return Ok(());
     }
 
-    let status = Command::new(&spec.verb_path).args(args).status()?;
+    let mut command = Command::new(&spec.verb_path);
+    command
+        .args(args)
+        .env("VOLN_VP_BOARD", &spec.board_name)
+        .env("VOLN_VP_VERB", spec.verb.as_str());
+    if let Some(path) = manifest {
+        command.env("VOLN_VP_ARTIFACT_MANIFEST", path);
+    }
+    let status = command.status()?;
     if status.success() {
         return Ok(());
     }

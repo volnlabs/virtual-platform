@@ -1,0 +1,42 @@
+name: Adapter and CLI checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adapters-and-cli:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt
+      - name: Rust CLI tests
+        run: |
+          cargo fmt --all --check
+          cargo test --workspace --locked
+      - name: Artifact and adapter tests (stand-in emulators)
+        env:
+          VOLN_VP_TEST_ARTIFACT_DIR: ${{ runner.temp }}/voln-vp-adapter-tests
+        run: python3 -m unittest discover -s backends/tests -v
+      - name: Renode model and platform unit tests
+        run: python3 -m unittest discover -s backends/renode/tests -v
+      - name: Retain failed test evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: adapter-test-evidence
+          path: ${{ runner.temp }}/voln-vp-adapter-tests
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Launch prebuilt axiomOS artifacts and check bounded guest boot over UART."""
 
-import hashlib
 import json
 import math
 import os
@@ -12,9 +11,18 @@ import shutil
 import signal
 import subprocess
 import sys
-import tempfile
 import termios
 import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from artifacts import Unsupported
+from results import RunResult
+
+
+class Failure(Exception):
+    def __init__(self, message, code):
+        super().__init__(message)
+        self.code = code
 
 
 def fail(message, code=2, run_dir=None):
@@ -28,46 +36,39 @@ def fail(message, code=2, run_dir=None):
                     source.seek(max(0, path.stat().st_size - 16384))
                     tail = source.read(16384).decode(errors="replace").splitlines()[-80:]
                 print("\n".join(tail), file=sys.stderr)
-    raise SystemExit(code)
-
-
-def input_file(variable):
-    value = os.environ.get(variable)
-    if not value:
-        fail(f"{variable} must name a prebuilt input file")
-    path = Path(value).resolve(strict=True)
-    if not path.is_file():
-        fail(f"{variable} is not a regular file: {path}")
-    if "," in str(path):
-        fail(f"{variable}: commas in QEMU input paths are unsupported: {path}")
-    return str(path)
+    raise Failure(message, code)
 
 
 def stop(process):
-    # The emulator owns its process group, including any helper children.
+    # Defer caller cancellation until the entire emulator group is stopped.
+    pending = []
+    previous = {signum: signal.signal(signum, lambda number, _frame: pending.append(number))
+                for signum in (signal.SIGINT, signal.SIGTERM)}
     try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        pass
-    try:
-        process.wait(timeout=1)
-    except subprocess.TimeoutExpired:
-        pass
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
-    process.wait()
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            pass
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        process.wait()
+    finally:
+        for signum, handler in previous.items():
+            signal.signal(signum, handler)
+    if pending:
+        signal.raise_signal(pending[-1])
 
 
-def boot(arch, verb, extra):
-    required = {
-        "aarch64": ["AXIOMOS_KERNEL", "AXIOMOS_DISK_IMAGE"],
-        "x86_64": ["AXIOMOS_ISO", "AXIOMOS_DISK_IMAGE", "AXIOMOS_OVMF_CODE", "AXIOMOS_OVMF_VARS"],
-        "riscv64": ["AXIOMOS_KERNEL"],
-    }
-    if arch not in required:
-        fail(f"unsupported QEMU architecture: {arch}")
+def boot(arch, verb, extra, record):
+    run_dir = record.directory
+    extra = extra[1:] if extra[:1] == ["--"] else extra
+    inputs = record.prepare(extra)
     duration = os.environ.get("VOLN_VP_TIMEOUT", "90s")
     match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)([smhd]?)", duration)
     if not match:
@@ -75,21 +76,23 @@ def boot(arch, verb, extra):
     timeout = float(match[1]) * {"": 1, "s": 1, "m": 60, "h": 3600, "d": 86400}[match[2]]
     if not math.isfinite(timeout) or timeout <= 0:
         fail("VOLN_VP_TIMEOUT must be a finite positive duration", 4)
-    inputs = {key: input_file(key) for key in required[arch]}
     executable = shutil.which(f"qemu-system-{arch}")
     if executable is None:
         fail(f"qemu-system-{arch} is not on PATH", 3)
 
-    base = Path(os.environ.get("VOLN_VP_ARTIFACT_DIR", "/tmp")).resolve()
-    base.mkdir(parents=True, exist_ok=True)
-    run_dir = Path(tempfile.mkdtemp(prefix=f"voln-vp-qemu-{arch}-", dir=base))
-    print(f"Artifacts: {run_dir}", flush=True)
     command = [executable, "-accel", "tcg", "-display", "none", "-monitor", "none", "-serial", "stdio", "-no-reboot"]
     if arch == "aarch64":
         command += ["-machine", "virt", "-m", "1G", "-cpu", "cortex-a57",
                     "-kernel", inputs["AXIOMOS_KERNEL"], "-drive",
                     f"if=none,file={inputs['AXIOMOS_DISK_IMAGE']},format=raw,id=hd0,snapshot=on",
-                    "-device", "virtio-blk-device,drive=hd0", "-semihosting"]
+                    "-device", "virtio-blk-device,drive=hd0", "-smp", "1"]
+        semihosting = os.environ.get("VOLN_VP_SEMIHOSTING", "off")
+        if semihosting not in ("on", "off"):
+            fail("VOLN_VP_SEMIHOSTING must be on or off", 4)
+        if semihosting == "on":
+            if verb == "test" and os.environ.get("VOLN_VP_ARTIFACT_MANIFEST"):
+                fail("semihosting is not allowed for manifest tests", 2)
+            command += ["-semihosting"]
     elif arch == "x86_64":
         command += ["-m", "4G", "-cpu", "max", "-smp", "1", "-vga", "none",
                     "-drive", f"if=pflash,unit=0,format=raw,file={inputs['AXIOMOS_OVMF_CODE']},readonly=on",
@@ -99,7 +102,13 @@ def boot(arch, verb, extra):
                     "-device", "virtio-blk-pci,drive=virtio-disk0"]
     else:
         command += ["-machine", "virt", "-bios", "default", "-kernel", inputs["AXIOMOS_KERNEL"]]
-    command += extra[1:] if extra[:1] == ["--"] else extra
+    command += extra
+    record.execution(command, timeout_seconds=timeout,
+                     machine="virt" if arch != "x86_64" else "default",
+                     cpu={"aarch64": "cortex-a57", "x86_64": "max", "riscv64": "default"}[arch],
+                     cores=1, ram="4G" if arch == "x86_64" else "1G" if arch == "aarch64" else "default",
+                     semihosting="-semihosting" in command,
+                     dtb="generated by QEMU command", diagnostic_overrides=extra)
 
     version = subprocess.Popen([executable, "--version"], stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT, start_new_session=True)
@@ -113,16 +122,13 @@ def boot(arch, verb, extra):
         (run_dir / "version.log").write_bytes(error.output or b"")
         fail("QEMU version query timed out", 124, run_dir)
     finally:
-        stop(version)
-        version.stdout.close()
+        try:
+            stop(version)
+        finally:
+            version.stdout.close()
 
-    provenance = {}
-    for key, path in inputs.items():
-        digest = hashlib.sha256()
-        with open(path, "rb") as source:
-            for chunk in iter(lambda: source.read(1024 * 1024), b""):
-                digest.update(chunk)
-        provenance[key] = {"path": path, "sha256": digest.hexdigest()}
+    digests = {artifact["path"]: artifact["sha256"] for artifact in record.data["inputs"]["artifacts"].values()}
+    provenance = {key: {"path": path, "sha256": digests[path]} for key, path in inputs.items()}
     metadata = {"architecture": arch, "verb": verb, "inputs": provenance,
                 "qemu_version": version_output.decode(errors="replace").strip(),
                 "argv": command, "cwd": os.getcwd(), "timeout_seconds": timeout}
@@ -136,6 +142,7 @@ def boot(arch, verb, extra):
     panicked = False
     failure_at = None
     ready_at = None
+    completed = False
     terminal = termios.tcgetattr(sys.stdin) if verb == "run" and sys.stdin.isatty() else None
     with (run_dir / "uart.log").open("wb") as uart, (run_dir / "qemu.log").open("wb") as log:
         process = subprocess.Popen(command, stdin=None if verb == "run" else subprocess.DEVNULL,
@@ -182,13 +189,21 @@ def boot(arch, verb, extra):
                         if ready_at is None:
                             ready_at = now + 0.1
                         if now >= ready_at:
-                            print("PASS: guest boot UART marker(s) observed", flush=True)
+                            completed = True
                             return 0
         finally:
-            stop(process)
-            process.stdout.close()
-            if terminal is not None:
-                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, terminal)
+            try:
+                stop(process)
+            finally:
+                os.set_blocking(process.stdout.fileno(), False)
+                final_output = process.stdout.read() or b""
+                uart.write(final_output)
+                uart.flush()
+                process.stdout.close()
+                if terminal is not None:
+                    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, terminal)
+            if completed and re.search(rb"\b(?:panic|panicked)\b|V04_PANIC|BOOT_FATAL", tail + final_output, re.IGNORECASE):
+                fail("guest panic or boot failure observed during cleanup", 1, run_dir)
 
 
 def main():
@@ -201,16 +216,26 @@ def main():
 
     signal.signal(signal.SIGINT, interrupted)
     signal.signal(signal.SIGTERM, interrupted)
+    record = None
+    code, reason, unsupported = 2, "invalid invocation", False
     try:
         if len(sys.argv) < 3 or sys.argv[2] not in ("run", "test"):
             fail("usage: runner.py <aarch64|x86_64|riscv64> <run|test> [QEMU arguments]")
-        return boot(sys.argv[1], sys.argv[2], sys.argv[3:])
+        record = RunResult("qemu", "virt", sys.argv[1], sys.argv[2])
+        code = boot(sys.argv[1], sys.argv[2], sys.argv[3:], record)
+        reason = "required boot milestones observed"
     except KeyboardInterrupt:
-        print(f"FAIL: interrupted by signal {received_signal}", file=sys.stderr)
-        return 128 + received_signal
+        code, reason = 128 + received_signal, f"interrupted by signal {received_signal}"
+        print(f"FAIL: {reason}", file=sys.stderr)
+    except Failure as error:
+        code, reason = error.code, str(error)
     except (OSError, ValueError) as error:
-        print(f"FAIL: {error}", file=sys.stderr)
-        return 2
+        code, reason, unsupported = 2, str(error), isinstance(error, Unsupported)
+        print(f"FAIL: {reason}", file=sys.stderr)
+    finally:
+        if record is not None:
+            record.finish(code, reason, unsupported)
+    return code
 
 
 if __name__ == "__main__":

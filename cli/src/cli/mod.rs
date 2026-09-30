@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use clap::{Args, Parser, Subcommand};
 
@@ -38,6 +38,10 @@ pub struct RunArgs {
     #[arg(long)]
     pub backend: Option<String>,
 
+    /// Consume a producer-generated prebuilt artifact manifest
+    #[arg(long)]
+    pub artifact_manifest: Option<PathBuf>,
+
     #[arg(long)]
     pub dry_run: bool,
 
@@ -62,5 +66,10 @@ pub fn run() {
 
 fn run_adapter(root: &Path, args: &RunArgs, verb: Verb) -> Result<()> {
     let spec = resolve_target_for(root, &args.board, args.backend.as_deref(), verb)?;
-    execute(&spec, &args.extra, args.dry_run)
+    execute(
+        &spec,
+        &args.extra,
+        args.dry_run,
+        args.artifact_manifest.as_deref(),
+    )
 }
