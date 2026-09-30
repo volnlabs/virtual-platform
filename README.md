@@ -130,6 +130,11 @@ available images' failures separately: Pi 5 allocation panic and x86_64 invalid
 root filesystem. Compatible QEMU AArch64 and RISC-V images still need live
 validation. No target is declared boot-ready from mocked tests.
 
+The [September 30 identified virt build](docs/probes/2026-09-30-identified-virt-build.md)
+produced an attributable rootfs but failed to link the matching kernel because
+the guest's virt linker script omits `__kernel_end`. No guest launch occurred;
+the producer bundle and three-boot gate remain blocked on that AxiomOS fix.
+
 See the [implementation checklist](TODO_NOW.md),
 [original risk gate](docs/probes/2026-07-30-armv8a-risk-gate.md), and
 [design](docs/superpowers/specs/2026-07-14-voln-vp-design.md).

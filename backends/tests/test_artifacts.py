@@ -25,7 +25,7 @@ def bundle(root, board="virt"):
         "schema_version": 1,
         "source": {"repository": "https://example.invalid/axiomos", "commit": "a" * 40, "dirty": False},
         "build": {"target": "aarch64-unknown-none", "architecture": "aarch64", "profile": "release",
-                  "features": ["cloud-profile", "virt"] if board == "virt" else ["embedded-rpi5"],
+                  "features": ["aarch64_arch", "cloud-profile", "virt"] if board == "virt" else ["aarch64_arch", "embedded-profile", "embedded-rpi5", "rpi5"],
                   "board": "virt" if board == "virt" else "rpi5", "toolchain": "rustc test", "producer_id": "synthetic-test"},
         "artifacts": {role: {"path": role, "size": (root / role).stat().st_size,
                              "sha256": hashlib.sha256((root / role).read_bytes()).hexdigest()} for role in roles},
@@ -80,6 +80,21 @@ class ArtifactTests(unittest.TestCase):
                 self.path.write_text(json.dumps(value))
                 with self.assertRaisesRegex(ValueError, error):
                     self.validate()
+
+    def test_requires_implied_kernel_features(self):
+        for board, requested, resolved in (
+            ("virt", ["cloud-profile", "virt"], ["aarch64_arch", "cloud-profile", "virt"]),
+            ("virt-pi5", ["embedded-rpi5"], ["aarch64_arch", "embedded-profile", "embedded-rpi5", "rpi5"]),
+        ):
+            with self.subTest(board=board):
+                self.path, self.manifest = bundle(self.root, board)
+                self.manifest["build"]["features"] = requested
+                self.path.write_text(json.dumps(self.manifest))
+                with self.assertRaisesRegex(ValueError, "features"):
+                    self.validate(board)
+                self.manifest["build"]["features"] = resolved
+                self.path.write_text(json.dumps(self.manifest))
+                self.validate(board)
 
     def test_wrong_elf_and_changed_bytes_rejected(self):
         (self.root / "rootfs").write_bytes(b"changed")

@@ -11,8 +11,10 @@ follow the spec's phase order. stop gates between phases are real.
   [x] terminal result.json for observed success, failure and unsupported inputs
   [x] --artifact-manifest CLI forwarding, conflict rejection and honest dry-run
   [x] adapter/CLI CI workflow and retained stand-in test evidence
-  [ ] hosted workflow completion (requires a push; not claimed from local tests)
+  [x] hosted workflow completion (run 36642831486 passed at a5c5423)
   [ ] attributable AxiomOS producer bundle and pinned execution profile
+  [!] clean b8953b5 virt build: rootfs built; kernel link lacks __kernel_end
+  Evidence: docs/probes/2026-09-30-identified-virt-build.md
   Manifest identity is not guest qualification. All qualification claims remain empty.
 
 2026-09-28 — prebuilt boot/test milestone

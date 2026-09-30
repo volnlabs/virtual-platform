@@ -79,8 +79,8 @@ def _validate(data, base, *, board, backend, arch):
     if build["architecture"] != arch:
         raise ValueError("build.architecture conflicts with selected architecture")
     profiles = {
-        ("virt", "qemu", "aarch64"): ("virt", ["cloud-profile", "virt"], {"kernel", "rootfs"}),
-        ("virt-pi5", "renode", "aarch64"): ("rpi5", ["embedded-rpi5"], {"kernel", "dtb"}),
+        ("virt", "qemu", "aarch64"): ("virt", ["aarch64_arch", "cloud-profile", "virt"], {"kernel", "rootfs"}),
+        ("virt-pi5", "renode", "aarch64"): ("rpi5", ["aarch64_arch", "embedded-profile", "embedded-rpi5", "rpi5"], {"kernel", "dtb"}),
     }
     if (board, backend, arch) not in profiles:
         raise Unsupported("unsupported board/backend/architecture manifest profile")

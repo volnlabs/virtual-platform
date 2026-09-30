@@ -24,8 +24,14 @@ Currently supported combinations:
 
 | Adapter board/backend | Guest board | Target / architecture | Profile / exact enabled features | Artifact roles |
 |---|---|---|---|---|
-| `virt` / QEMU | `virt` | `aarch64-unknown-none` / `aarch64` | `release` / `["cloud-profile", "virt"]` | `kernel`, `rootfs` |
-| `virt-pi5` / Renode | `rpi5` | `aarch64-unknown-none` / `aarch64` | `release` / `["embedded-rpi5"]` | `kernel`, `dtb` |
+| `virt` / QEMU | `virt` | `aarch64-unknown-none` / `aarch64` | `release` / `["aarch64_arch", "cloud-profile", "virt"]` | `kernel`, `rootfs` |
+| `virt-pi5` / Renode | `rpi5` | `aarch64-unknown-none` / `aarch64` | `release` / `["aarch64_arch", "embedded-profile", "embedded-rpi5", "rpi5"]` | `kernel`, `dtb` |
+
+`features` lists all enabled features of the `kernel` package, including those
+implied by aliases, sorted and with default features disabled. These closures
+were checked against AxiomOS commit `b8953b593d5f3be2a15960aef24ccef0fc507ca3`.
+The producer build record must also retain the rootfs build's features and the
+resolved dependency feature graph; this field does not describe every package.
 
 These are deliberately narrow consumer profiles, not claims that a producer
 build is available. A different enabled feature set requires a reviewed contract

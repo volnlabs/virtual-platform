@@ -11,8 +11,10 @@
 **Spec:** The user's September 30 proposal, captured in the scope and acceptance gates below, refines [the approved design](../specs/2026-07-14-voln-vp-design.md). This plan proposes amendments to that design; it does not silently rewrite its decisions.
 
 **Implementation status (September 30):** Tasks 1–3 have a local consumer
-implementation and regression checks. The AxiomOS producer handshake and hosted
-CI execution remain external prerequisites; no guest qualification is claimed.
+implementation and regression checks. Hosted CI passed at `a5c5423` (run
+`36642831486`). The [identified AxiomOS build](../../probes/2026-09-30-identified-virt-build.md)
+failed to link the virt kernel; the producer handshake remains incomplete and
+no guest qualification is claimed.
 Tasks 4–8 remain future work gated as described below.
 
 ## Global constraints
