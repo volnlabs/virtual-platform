@@ -27,6 +27,7 @@ if "--version" in sys.argv:
         child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
         (root / "child-pid").write_text(str(child.pid))
         (root / "pid").write_text(str(os.getpid()))
+        (root / "emulator-ready").touch()
         time.sleep(60)
     print("test emulator 1.0")
     sys.exit(0)
@@ -42,6 +43,7 @@ if mode == "orphan":
 if mode == "child":
     child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
     (root / "child-pid").write_text(str(child.pid))
+    (root / "emulator-ready").touch()
     time.sleep(60)
 if mode == "timeout":
     time.sleep(60)
@@ -495,14 +497,13 @@ class AdapterTests(unittest.TestCase):
             with self.subTest(backend=backend, mode=mode):
                 self.env["FAKE_MODE"] = mode
                 (self.root / "child-pid").unlink(missing_ok=True)
+                (self.root / "emulator-ready").unlink(missing_ok=True)
                 command = ROOT / "backends" / backend / "adapters/test.sh"
                 process = subprocess.Popen([str(command)], env=self.env, cwd=self.root,
                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 try:
-                    deadline = time.monotonic() + 4
-                    while not (self.root / "child-pid").exists() and time.monotonic() < deadline:
-                        time.sleep(0.02)
-                    self.assertTrue((self.root / "child-pid").exists())
+                    # A PID file can exist before its write finishes; wait for both.
+                    self.wait_for_file(self.root / "emulator-ready")
                     process.send_signal(signal.SIGTERM)
                     stdout, stderr = process.communicate(timeout=4)
                     self.assertEqual(process.returncode, 143, stdout + stderr)
