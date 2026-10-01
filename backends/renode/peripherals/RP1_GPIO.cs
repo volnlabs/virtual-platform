@@ -1,4 +1,4 @@
-// Isolated IO_BANK0 and RIO output subset. No pads, filtering or PCIe delivery.
+// Isolated IO_BANK0, RIO output and digital pad gates. No analog behavior or PCIe.
 // See docs/contracts/rp1-gpio-model.md for supported fields and sampling policy.
 using System;
 using Antmicro.Renode.Core;
@@ -28,10 +28,11 @@ namespace Antmicro.Renode.Peripherals.GPIOPort
             for(var i = 0; i < PinCount; i++)
             {
                 control[i] = 0x9f;
+                pads[i] = i < 9 ? 0x9au : 0x96u;
                 edges[i] = 0;
-                input[i] = sampled[i] = false;
+                input[i] = sampled[i] = externalInput[i] = false;
             }
-            this.Log(LogLevel.Info, "RP1_GPIO_PROFILE exclusions=pads,filtering,rio_input,alternate_mux,pcie_delivery rio_reset_preset=zero");
+            this.Log(LogLevel.Info, "RP1_GPIO_PROFILE exclusions=analog_pads,filtering,rio_input,alternate_mux,pcie_delivery rio_reset_preset=zero input_gate_policy=low_resample");
             Refresh("reset", true);
             // Reset must not erase unsupported-access evidence or reuse sequence numbers.
         }
@@ -39,12 +40,19 @@ namespace Antmicro.Renode.Peripherals.GPIOPort
         public void OnGPIO(int number, bool value)
         {
             CheckPin(number);
-            // Samples are already conditioned by the external fixture. No implicit
-            // output loopback, synchronizer latency, pull or electrical model.
-            if(input[number] != value) edges[number] |= value ? 1u << 21 : 1u << 20;
-            input[number] = value;
-            sampled[number] = true;
+            externalInput[number] = value;
+            SampleInput(number);
             Refresh("input");
+        }
+
+        private void SampleInput(int pin)
+        {
+            // Explicit unit policy: IE off samples low; changing IE resamples a
+            // held external level. This does not model analog or synchronizer timing.
+            var value = (pads[pin] & 0x40) != 0 && externalInput[pin];
+            if(input[pin] != value) edges[pin] |= value ? 1u << 21 : 1u << 20;
+            input[pin] = value;
+            sampled[pin] = true;
         }
 
         public uint ReadDoubleWord(long offset)
@@ -113,6 +121,27 @@ namespace Antmicro.Renode.Peripherals.GPIOPort
             Refresh("rio");
         }
 
+        [ConnectionRegion("pads")]
+        public uint ReadPadDoubleWord(long offset) => pads[PadPin(offset)];
+
+        [ConnectionRegion("pads")]
+        public void WritePadDoubleWord(long offset, uint value)
+        {
+            var pin = PadPin(offset);
+            if((value & ~0xffu) != 0) throw Unsupported(offset, "pad bits");
+            pads[pin] = ApplyAlias(pads[pin], value, (int)(offset / 0x1000));
+            if(sampled[pin]) SampleInput(pin);
+            Refresh("pads");
+        }
+
+        private int PadPin(long offset)
+        {
+            CheckOffset(offset);
+            var register = offset & 0xfff;
+            if(register < 4 || register > PinCount * 4) throw Unsupported(offset, "pad register");
+            return (int)(register / 4) - 1;
+        }
+
         // Named regions do not inherit default bus-interface width handlers.
         [ConnectionRegion("rio")]
         public byte ReadByte(long offset) { throw Unsupported(offset, "8-bit read"); }
@@ -127,13 +156,27 @@ namespace Antmicro.Renode.Peripherals.GPIOPort
         [ConnectionRegion("rio")]
         public void WriteQuadWord(long offset, ulong value) { throw Unsupported(offset, "64-bit write"); }
 
+        [ConnectionRegion("pads")]
+        public byte ReadPadByte(long offset) => ReadByte(offset);
+        [ConnectionRegion("pads")]
+        public ushort ReadPadWord(long offset) => ReadWord(offset);
+        [ConnectionRegion("pads")]
+        public ulong ReadPadQuadWord(long offset) => ReadQuadWord(offset);
+        [ConnectionRegion("pads")]
+        public void WritePadByte(long offset, byte value) => WriteByte(offset, value);
+        [ConnectionRegion("pads")]
+        public void WritePadWord(long offset, ushort value) => WriteWord(offset, value);
+        [ConnectionRegion("pads")]
+        public void WritePadQuadWord(long offset, ulong value) => WriteQuadWord(offset, value);
+
         public string GetPinState(int pin)
         {
             CheckPin(pin);
             var output = !OutputEnabled(pin) ? "disabled" : OutputHigh(pin) ? "high" : "low";
-            return string.Format("pin={0} sampled={1} input={2} output={3} events=0x{4:X8} pending={5}",
+            var drive = (pads[pin] & 0x80) != 0 ? "disabled" : output;
+            return string.Format("pin={0} sampled={1} input={2} output={3} events=0x{4:X8} pending={5} drive={6} pad=0x{7:X2} external={8}",
                 pin, sampled[pin], input[pin], output, Events(pin),
-                ((rawInterrupts & pcieEnable) & (1u << pin)) != 0);
+                ((rawInterrupts & pcieEnable) & (1u << pin)) != 0, drive, pads[pin], externalInput[pin]);
         }
 
         private void ValidateControl(long offset, uint value)
@@ -226,8 +269,8 @@ namespace Antmicro.Renode.Peripherals.GPIOPort
         }
 
         private const int PinCount = 28;
-        private readonly uint[] control = new uint[PinCount], edges = new uint[PinCount];
-        private readonly bool[] input = new bool[PinCount], sampled = new bool[PinCount];
+        private readonly uint[] control = new uint[PinCount], edges = new uint[PinCount], pads = new uint[PinCount];
+        private readonly bool[] input = new bool[PinCount], sampled = new bool[PinCount], externalInput = new bool[PinCount];
         private readonly string[] lastCapture = new string[PinCount];
         private uint pcieEnable, rawInterrupts, rioOutput, rioEnable;
         private ulong sequence;
