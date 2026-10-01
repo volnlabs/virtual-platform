@@ -1,4 +1,4 @@
-// Isolated IO_BANK0 subset. No pads, filtering, peripheral mux or PCIe delivery.
+// Isolated IO_BANK0 and RIO output subset. No pads, filtering or PCIe delivery.
 // See docs/contracts/rp1-gpio-model.md for supported fields and sampling policy.
 using System;
 using Antmicro.Renode.Core;
@@ -24,14 +24,14 @@ namespace Antmicro.Renode.Peripherals.GPIOPort
 
         public override void Reset()
         {
-            pcieEnable = 0;
+            pcieEnable = rioOutput = rioEnable = 0;
             for(var i = 0; i < PinCount; i++)
             {
                 control[i] = 0x9f;
                 edges[i] = 0;
                 input[i] = sampled[i] = false;
             }
-            this.Log(LogLevel.Info, "RP1_GPIO_PROFILE exclusions=pads,filtering,peripheral_mux,pcie_delivery");
+            this.Log(LogLevel.Info, "RP1_GPIO_PROFILE exclusions=pads,filtering,rio_input,alternate_mux,pcie_delivery rio_reset_preset=zero");
             Refresh("reset", true);
             // Reset must not erase unsupported-access evidence or reuse sequence numbers.
         }
@@ -86,11 +86,45 @@ namespace Antmicro.Renode.Peripherals.GPIOPort
             Refresh("write");
         }
 
+        [ConnectionRegion("rio")]
+        public uint ReadRioDoubleWord(long offset)
+        {
+            CheckOffset(offset);
+            switch(offset & 0xfff)
+            {
+                case 0: return rioOutput;
+                case 4: return rioEnable;
+                default: throw Unsupported(offset, "RIO register/input path");
+            }
+        }
+
+        [ConnectionRegion("rio")]
+        public void WriteRioDoubleWord(long offset, uint value)
+        {
+            CheckOffset(offset);
+            if((value & ~0x0fffffffu) != 0) throw Unsupported(offset, "RIO pin bits");
+            var alias = (int)(offset / 0x1000);
+            switch(offset & 0xfff)
+            {
+                case 0: rioOutput = ApplyAlias(rioOutput, value, alias); break;
+                case 4: rioEnable = ApplyAlias(rioEnable, value, alias); break;
+                default: throw Unsupported(offset, "RIO register/input path");
+            }
+            Refresh("rio");
+        }
+
+        // Named regions do not inherit default bus-interface width handlers.
+        [ConnectionRegion("rio")]
         public byte ReadByte(long offset) { throw Unsupported(offset, "8-bit read"); }
+        [ConnectionRegion("rio")]
         public ushort ReadWord(long offset) { throw Unsupported(offset, "16-bit read"); }
+        [ConnectionRegion("rio")]
         public ulong ReadQuadWord(long offset) { throw Unsupported(offset, "64-bit read"); }
+        [ConnectionRegion("rio")]
         public void WriteByte(long offset, byte value) { throw Unsupported(offset, "8-bit write"); }
+        [ConnectionRegion("rio")]
         public void WriteWord(long offset, ushort value) { throw Unsupported(offset, "16-bit write"); }
+        [ConnectionRegion("rio")]
         public void WriteQuadWord(long offset, ulong value) { throw Unsupported(offset, "64-bit write"); }
 
         public string GetPinState(int pin)
@@ -105,21 +139,16 @@ namespace Antmicro.Renode.Peripherals.GPIOPort
         private void ValidateControl(long offset, uint value)
         {
             var function = value & 0x1f;
-            var output = (value >> 12) & 3;
-            var enable = (value >> 14) & 3;
             if(function != 5 && function != 31) throw Unsupported(offset, "function mux");
             if((value & 0xfe0) != 0x80) throw Unsupported(offset, "filter time constant");
-            // GPIO/RIO and alternate peripheral signal sources are not connected.
-            // Accept only forced OE/data, or disabled NULL's reset signal source.
-            if(enable == 1 || (enable == 0 && function != 31) || output == 1
-                || (enable == 3 && output < 2))
-                throw Unsupported(offset, "peripheral-derived output/enable");
         }
 
         private uint Status(int pin)
         {
             var status = Events(pin);
             if(input[pin]) status |= 1u << 17;
+            if(PeripheralSignal(pin, rioOutput)) status |= 1u << 8;
+            if(PeripheralSignal(pin, rioEnable)) status |= 1u << 12;
             if(OutputHigh(pin)) status |= 1u << 9;
             if(OutputEnabled(pin)) status |= 1u << 13;
             if((rawInterrupts & (1u << pin)) != 0) status |= 3u << 28;
@@ -131,8 +160,20 @@ namespace Antmicro.Renode.Peripherals.GPIOPort
             return edges[pin] | (sampled[pin] ? (input[pin] ? 1u << 23 : 1u << 22) : 0);
         }
 
-        private bool OutputEnabled(int pin) => ((control[pin] >> 14) & 3) == 3;
-        private bool OutputHigh(int pin) => ((control[pin] >> 12) & 3) == 3;
+        private bool PeripheralSignal(int pin, uint rio) => (control[pin] & 0x1f) == 5 && (rio & (1u << pin)) != 0;
+        private bool OutputEnabled(int pin) => Override(PeripheralSignal(pin, rioEnable), (control[pin] >> 14) & 3);
+        private bool OutputHigh(int pin) => Override(PeripheralSignal(pin, rioOutput), (control[pin] >> 12) & 3);
+
+        private static bool Override(bool signal, uint selection)
+        {
+            switch(selection)
+            {
+                case 0: return signal;
+                case 1: return !signal;
+                case 2: return false;
+                default: return true;
+            }
+        }
 
         private void Refresh(string cause, bool force = false)
         {
@@ -188,7 +229,7 @@ namespace Antmicro.Renode.Peripherals.GPIOPort
         private readonly uint[] control = new uint[PinCount], edges = new uint[PinCount];
         private readonly bool[] input = new bool[PinCount], sampled = new bool[PinCount];
         private readonly string[] lastCapture = new string[PinCount];
-        private uint pcieEnable, rawInterrupts;
+        private uint pcieEnable, rawInterrupts, rioOutput, rioEnable;
         private ulong sequence;
     }
 }
