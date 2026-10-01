@@ -30,6 +30,11 @@ and the [native probe report](../../probes/2026-10-01-renode-model-audit.md).
 The source pin comes from the retained virt manifest, not an accepted Pi
 manifest. RP1 models, strict enforcement and guest qualification remain open.
 
+Task 6 now also has an [isolated PWM unit-model slice](../../contracts/rp1-pwm-model.md)
+with explicit timing policies and strict mapped-access checks, plus the Renode
+warning gate. It is not wired into the canonical Pi platform; complete GPIO/PWM
+driver coverage and a strict qualified execution profile remain open.
+
 ## Global constraints
 
 - No QEMU fork, custom QEMU machine, simulator framework, or CLI workflow language.

@@ -67,6 +67,10 @@ Results retain `mode`, staged suite path/hash, inputs, commands, Robot output,
 logs and `scenario_result.passed_tests` on success. `qualification_claims`
 remains empty for every outcome.
 
+For model tests, `VOLN_VP_STRICT_MMIO=1` also rejects retained Renode warnings
+after cleanup. See the [PWM unit-model contract](rp1-pwm-model.md) for this gate's
+scope, explicit register validation and stock-model coverage limits.
+
 ## Adapter integration check
 
 `backends/renode/tests/native-runner.robot` checks staged-variable delivery and

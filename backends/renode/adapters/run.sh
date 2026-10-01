@@ -75,6 +75,11 @@ else
   cat "$RUN_DIR/preflight.log" >&2
   exit "$PREPARE_STATUS"
 fi
+if [[ "${VOLN_VP_STRICT_MMIO:-0}" == 1 ]]; then
+  # Custom models validate their own registers. Stock bus coverage also needs
+  # warnings retained; any warning invalidates this deliberately narrow gate.
+  ERROR_PATTERN+='|\[WARNING\]'
+fi
 RUN_CWD="$REPO_ROOT"
 KERNEL="$RUN_DIR/inputs/kernel.elf"
 DTB="$RUN_DIR/inputs/board.dtb"
