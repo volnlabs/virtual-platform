@@ -4,6 +4,15 @@ plans: docs/superpowers/plans/2026-09-30-runtime-testing-platform.md
 this file is the at-a-glance tracker
 follow the spec's phase order. stop gates between phases are real.
 
+2026-10-01 — RP1 source and installed-model audit
+  [x] source-only GPIO/PWM/attachment inventory at a6f48d1
+  [x] installed Renode type inventory and native access-warning probes
+  [x] positive audit and deliberately failed assertion; durable evidence
+  [ ] Pi-target producer manifest and hardware/reset-semantic validation
+  [ ] first RP1 model plus strict MMIO coverage enforcement
+  Scope: docs/contracts/rp1-driver-coverage.md and docs/probes/2026-10-01-renode-model-audit.md.
+  No guest qualification, model implementation, or AxiomOS changes in this audit.
+
 2026-09-30 — native runtime suite transport
   [x] explicit boot/runtime CLI mode and native scenario path
   [x] QEMU runtime unsupported until guest completion interface is bound
@@ -82,7 +91,7 @@ phase 3 — RP1 models + driver suite
   Guest integration remains blocked by 2.13. Audit found no installed
   RP2040/Pico model; `picosoc` is PicoRV32, and interconnect/PCIe modeling
   requires C# rather than a Renode request-based Python peripheral.
-  [ ] 3.1 RP2040 reuse audit (BLOCKER for 3.2-3.6)
+  [x] 3.1 installed RP2040 reuse audit (no matching model; generic PCI candidates only)
   [ ] 3.2 PCIe RC/endpoint C# model (5-day investigation budget)
   [ ] 3.12 strict-mode enforcement (required with the first model)
   [ ] 3.3 RP1 GPIO (TDD)

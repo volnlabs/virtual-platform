@@ -24,6 +24,12 @@ Renode Robot results, watchdog, cleanup and adapter regression checks. Actual
 guest readiness/management/correlated-completion assertions remain unbound.
 No AxiomOS edits or builds are authorized from this project.
 
+**October 1 audit:** Task 6's preliminary source inventory and installed-model
+audit are recorded in [driver coverage](../../contracts/rp1-driver-coverage.md)
+and the [native probe report](../../probes/2026-10-01-renode-model-audit.md).
+The source pin comes from the retained virt manifest, not an accepted Pi
+manifest. RP1 models, strict enforcement and guest qualification remain open.
+
 ## Global constraints
 
 - No QEMU fork, custom QEMU machine, simulator framework, or CLI workflow language.
