@@ -51,6 +51,7 @@ class RunResult:
         backend, board = self.data["backend"], self.data["board"]
         paths = [ROOT / "backends/artifacts.py", ROOT / "backends/results.py"]
         paths += sorted((ROOT / "backends" / backend).rglob("*.py"))
+        paths += sorted((ROOT / "backends" / backend / "peripherals").glob("*.cs"))
         paths += sorted((ROOT / "backends" / backend / "adapters").glob("*.sh"))
         paths += sorted((ROOT / "backends" / backend / "scripts").glob("*.resc"))
         paths += sorted((ROOT / "boards" / board).rglob("*.repl"))
@@ -79,6 +80,14 @@ class RunResult:
     def prepare(self, extra):
         self.provenance()
         backend, arch = self.data["backend"], self.data["architecture"]
+        strict = os.environ.get("VOLN_VP_STRICT_MMIO", "0")
+        if strict not in ("0", "1"):
+            raise ValueError("VOLN_VP_STRICT_MMIO must be 0 or 1")
+        if strict == "1" and backend != "renode":
+            raise Unsupported("strict MMIO checking is supported only by Renode")
+        if strict == "1" and extra:
+            raise ValueError("strict MMIO checking does not accept raw emulator arguments")
+        self.data["strict_mmio"] = strict == "1"
         mode, scenario = self.data["mode"], os.environ.get("VOLN_VP_SCENARIO")
         if mode not in ("boot", "runtime"):
             raise ValueError("VOLN_VP_TEST_MODE must be boot or runtime")

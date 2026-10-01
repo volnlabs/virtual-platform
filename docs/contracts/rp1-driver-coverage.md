@@ -125,7 +125,11 @@ is separate from APB register access.
 | Channel RANGE | `0x18 + 0x10*n` | Write period in assumed PWM clocks; frequency computes integer `50_000_000 / Hz`. |
 | Channel DUTY | `0x20 + 0x10*n` | Write high-time cycles; percentage path clamps to 100 and computes `range*percent/100`. |
 
-`set_range` and `set_data` write the channel register then latch via GLOBAL_CTRL;
+`set_range` and `set_data` write the channel register then pulse GLOBAL_CTRL;
+that records the source's sequence, not proof of the update boundary. The
+[vendor PWM register contract](https://datasheets.raspberrypi.com/rp1/rp1-peripherals.pdf#page=40)
+says individual range/duty writes take effect at channel overflow, independently
+of SET_UPDATE, which synchronizes enable/control/phase and common-range changes.
 enable writes channel CTRL default and sets the channel-enable plus update bits;
 disable clears the channel bit and latches. PWM init performs a full GLOBAL_CTRL
 write of `0x8000_0000`: enable bits 0–3 are zero and SET_UPDATE is one, so all
