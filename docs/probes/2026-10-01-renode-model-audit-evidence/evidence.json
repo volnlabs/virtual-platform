@@ -1,0 +1,78 @@
+{
+  "scope": "Native installed-model and warning audit only; no guest loaded",
+  "renode_version": "Renode v1.16.1.16973\n  build: d66b0c2a-202602160923\n  build type: Release\n  runtime: .NET 10.0.11",
+  "robot_version": "6.1",
+  "input_sha256": {
+    "/opt/renode/bin/Infrastructure.dll": "2c38dbaf4ece2313a34d8389edf8253104d5ef20353270a149fb8eaed33e312a",
+    "/opt/renode/bin/Renode.dll": "979764ace5f06329ae559efa701c72c373eaffeae3830c85b0ed36f113661b7a",
+    "/opt/renode/platforms/cpus/picosoc.repl": "869568d010dc6be418bb896e332fde4f8a1f94d0b6cd67d2566900ac6dc54448",
+    "/opt/renode/platforms/cpus/polarfire-soc.repl": "2b664d86b821ae17c776784d42690f0aaf9fa878b9b65d5e2a8f0442df0f349e",
+    "/opt/renode/tests/requirements.txt": "1e71eb2d801e44205b8c5a490d227aa3446fb377ec8ec79fb84a9d7518e997eb",
+    "/usr/bin/renode-test": "cf6957016f93221a27d3d979c592d86856e2db23a1640d1f6b642e4fe1f29ee3"
+  },
+  "public_peripheral_type_count": 1234,
+  "positive": {
+    "exit_code": 0,
+    "passed_tests": 4,
+    "argv": [
+      "timeout",
+      "--kill-after=2s",
+      "60s",
+      "renode-test",
+      "--jobs=1",
+      "--keep-renode-output",
+      "--save-logs",
+      "always",
+      "--results-dir",
+      "/tmp/rp1-model-audit-positive-v2",
+      "--variable",
+      "AUDIT_DIRECTORY:/tmp/rp1-model-audit-positive-v2",
+      "backends/renode/tests/model-audit.robot"
+    ]
+  },
+  "negative": {
+    "exit_code": 1,
+    "passed_tests": 3,
+    "failed_tests": 1,
+    "override": "UNMAPPED_WARNING:deliberately-absent",
+    "argv": [
+      "timeout",
+      "--kill-after=2s",
+      "60s",
+      "renode-test",
+      "--jobs=1",
+      "--keep-renode-output",
+      "--save-logs",
+      "always",
+      "--results-dir",
+      "/tmp/rp1-model-audit-negative-v2",
+      "--variable",
+      "AUDIT_DIRECTORY:/tmp/rp1-model-audit-negative-v2",
+      "--variable",
+      "UNMAPPED_WARNING:deliberately-absent",
+      "backends/renode/tests/model-audit.robot"
+    ]
+  },
+  "archive_sha256": "8caa478446d41369302d985268a3e845d9d2baef0d107b9b68d0281e87324879",
+  "archive_members_sha256": {
+    "model-audit.robot": "f17feda5c59458b2946e3282024ef033c95a1b34cd6c190fb0e86945425e75e6",
+    "negative/launcher.log": "145f49265539d9acbe13b4cb8de6975ef3b5b0d96bb2d95e78cbb5fa2e293503",
+    "negative/logs/model-audit.Inventory_Loaded_Peripheral_Types.fail0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "negative/logs/model-audit.Reserved_PL011_Offset_Is_Silently_Ignored.fail0.log": "311c7d7eee641e7976850f16fbfd8b597e7070c45279c18f6cf16afc324de776",
+    "negative/logs/model-audit.Unmapped_Accesses_Emit_Warnings.fail0.log": "703f19da48af2561a219c840ced127d9ffbb1ac1cb531b5a070cbae66d80e8dc",
+    "negative/logs/model-audit.Unsupported_Width_And_Control_Bits_Emit_Warnings.fail0.log": "b42a778f423e7729e6df45ec8beccbe35a77a571ea278263ceb99743d0201271",
+    "negative/logs/model-audit.renode_stdout.log": "be529620d3d4f8f461b4b1880b04d548cbf970dea60f16c482836fd6ceda50ef",
+    "negative/peripheral-types.txt": "89018cafcec6bcea18d3af95dd713a23b18e1c63b71aaaf8b1ba9e46d9983c7b",
+    "negative/robot_output.xml": "bd7891508433435157377d8a4de29604dce438679b625b358c360ffd71563d55",
+    "positive/launcher.log": "e934f1271fa57c42b7cb869309269239e43bc69ee660060da67af222ca321c19",
+    "positive/logs/model-audit.Inventory_Loaded_Peripheral_Types.fail0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "positive/logs/model-audit.Reserved_PL011_Offset_Is_Silently_Ignored.fail0.log": "a611cef025a9e73b74e40fbc17ba3e7f3ec78d90aa7de82181f2f6f5692c5b31",
+    "positive/logs/model-audit.Unmapped_Accesses_Emit_Warnings.fail0.log": "05d8d9758d3910c49d58b4000a621754a2ad80fe03376b74311f46de26be0813",
+    "positive/logs/model-audit.Unsupported_Width_And_Control_Bits_Emit_Warnings.fail0.log": "8112fc413810596d977a57c1612bd98307995efda0077894f7a40fffaa9c7623",
+    "positive/logs/model-audit.renode_stdout.log": "0108ee386acea10660a7cacbc8cdb879f9a1dcf0d7c37ea7b3c6a61f3ba0cddf",
+    "positive/peripheral-types.txt": "89018cafcec6bcea18d3af95dd713a23b18e1c63b71aaaf8b1ba9e46d9983c7b",
+    "positive/robot_output.xml": "cfb0518583d0349dae25ca6f4c58af834f5580afa135c231f563dfb0240d8a31"
+  },
+  "cwd": "/home/utkarsh/Work/volnlabs/axiomos-sim",
+  "python_environment": "/tmp/voln-vp-robot-env"
+}
