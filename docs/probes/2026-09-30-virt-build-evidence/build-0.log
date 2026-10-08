@@ -1,0 +1,226 @@
+   Compiling proc-macro2 v1.0.103
+   Compiling quote v1.0.42
+   Compiling unicode-ident v1.0.22
+   Compiling bitflags v2.10.0
+   Compiling zerocopy v0.9.0-alpha.0
+   Compiling version_check v0.9.5
+   Compiling syn v2.0.111
+   Compiling generic-array v0.14.7
+   Compiling scopeguard v1.2.0
+   Compiling lock_api v0.4.14
+   Compiling typenum v1.20.1
+   Compiling thiserror v2.0.18
+   Compiling shlex v1.3.0
+   Compiling find-msvc-tools v0.1.5
+   Compiling cc v1.2.47
+   Compiling spin v0.10.0
+   Compiling cfg-if v1.0.4
+   Compiling libc v0.2.177
+   Compiling log v0.4.28
+   Compiling zerocopy-derive v0.9.0-alpha.0
+   Compiling thiserror-impl v2.0.18
+   Compiling kernel_abi v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_abi)
+   Compiling minilib v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/core/minilib)
+   Compiling kernel_physical_memory v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_physical_memory)
+   Compiling ring v0.17.14
+   Compiling semver v1.0.28
+   Compiling rustc_version v0.4.1
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling cpufeatures v0.2.17
+   Compiling zeroize v1.8.2
+   Compiling rustls-pki-types v1.13.0
+   Compiling digest v0.10.7
+   Compiling curve25519-dalek v4.1.3
+   Compiling getrandom v0.2.16
+   Compiling hybrid-array v0.4.13
+   Compiling zerocopy v0.8.28
+   Compiling crc32fast v1.5.0
+   Compiling mkfs-filesystem v0.1.0 (https://github.com/tsatke/mkfs#24c1cfba)
+   Compiling rustix v1.1.3
+   Compiling untrusted v0.9.0
+   Compiling httparse v1.10.1
+   Compiling kernel_virtual_memory v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_virtual_memory)
+   Compiling zerocopy-derive v0.8.28
+   Compiling bytes v1.11.1
+   Compiling adler2 v2.0.1
+   Compiling subtle v2.6.1
+   Compiling rustversion v1.0.22
+   Compiling itoa v1.0.15
+   Compiling signature v2.2.0
+   Compiling linux-raw-sys v0.11.0
+   Compiling rustls v0.23.35
+   Compiling linkme-impl v0.3.36
+   Compiling simd-adler32 v0.3.7
+   Compiling miniz_oxide v0.8.9
+   Compiling ed25519 v2.2.3
+   Compiling http v1.4.0
+   Compiling rustls-webpki v0.103.13
+   Compiling sha2 v0.10.9
+   Compiling crypto-common v0.2.0-rc.5
+   Compiling block-buffer v0.11.0
+   Compiling kernel_vfs v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_vfs)
+   Compiling kernel_memapi v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_memapi)
+   Compiling linkme v0.3.36
+   Compiling crc-catalog v2.4.0
+   Compiling base64 v0.22.1
+   Compiling either v1.15.0
+   Compiling once_cell v1.21.3
+   Compiling itertools v0.14.0
+   Compiling ureq-proto v0.5.3
+   Compiling crc v3.3.0
+   Compiling digest v0.11.0-rc.4
+   Compiling ed25519-dalek v2.2.0
+   Compiling safe-mmio v0.2.5
+   Compiling flate2 v1.1.5
+   Compiling xattr v1.6.1
+   Compiling webpki-roots v1.0.4
+   Compiling keccak v0.2.0-rc.0
+   Compiling kernel_device v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_device)
+   Compiling filetime v0.2.26
+   Compiling volatile-macro v0.6.0
+   Compiling enumn v0.1.14
+   Compiling bitfield-macros v0.19.4
+   Compiling kernel v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel)
+   Compiling spinning_top v0.2.5
+   Compiling embedded-io v0.6.1
+   Compiling byteorder v1.5.0
+   Compiling utf-8 v0.7.6
+   Compiling rustc-demangle v0.1.26
+   Compiling tock-registers v0.8.1
+   Compiling percent-encoding v2.3.2
+   Compiling conquer-util v0.3.0
+   Compiling gimli v0.33.0
+   Compiling cordyceps v0.3.4
+   Compiling fallible-iterator v0.3.0
+   Compiling kernel_run_queue v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_run_queue)
+   Compiling conquer-once v0.4.0
+   Compiling ureq v3.1.4
+   Compiling addr2line v0.26.1
+   Compiling aarch64-cpu v9.4.0
+   Compiling lzma-rs v0.3.0
+   Compiling bitfield v0.19.4
+   Compiling virtio-drivers v0.12.0
+   Compiling linked_list_allocator v0.10.5
+   Compiling volatile v0.6.1
+   Compiling tar v0.4.46
+   Compiling kernel_devfs v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_devfs)
+   Compiling sha3 v0.11.0-rc.3
+   Compiling uart_16550 v0.4.0
+   Compiling kernel_bpf v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_bpf)
+   Compiling kernel_elfloader v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_elfloader)
+   Compiling kernel_pci v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_pci)
+   Compiling kernel_syscall v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_syscall)
+   Compiling kernel_map_transaction v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_map_transaction)
+   Compiling kernel_usermem v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_usermem)
+   Compiling mkfs-ext2 v0.1.0 (https://github.com/tsatke/mkfs#24c1cfba)
+   Compiling elf v0.7.4
+   Compiling kernel_time v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_time)
+   Compiling jiff v0.2.16
+   Compiling fdt v0.1.5
+   Compiling shrike_link v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/shrike_link)
+   Compiling ovmf-prebuilt v0.2.4
+   Compiling file_structure v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/core/file_structure)
+   Compiling axiomos v0.1.0 (/tmp/axiomos-producer-b8953b5)
+   Compiling pwm_demo v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/pwm_demo)
+   Compiling sched_switch_bridge_demo v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/sched_switch_bridge_demo)
+   Compiling file_io_demo v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/file_io_demo)
+   Compiling gpio_demo v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/gpio_demo)
+   Compiling verifier_bench v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/benchmarks/verifier)
+   Compiling syscall_demo v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/syscall_demo)
+   Compiling signed_bpf_loader v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/tools/signed_bpf_loader)
+   Compiling rk_uart_forwarder v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/tools/rk_uart_forwarder)
+   Compiling sched_switch_export_demo v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/sched_switch_export_demo)
+   Compiling timeseries_demo v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/timeseries_demo)
+   Compiling init v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/core/init)
+   Compiling sys_exit_demo v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/sys_exit_demo)
+   Compiling sched_switch_demo v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/sched_switch_demo)
+   Compiling bpf_loader v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/tools/bpf_loader)
+warning: unused import: `VirtAddr`
+  --> kernel/src/mcore/mtask/process/trampoline.rs:26:39
+   |
+26 | use crate::arch::{PageSize, Size4KiB, VirtAddr};
+   |                                       ^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `load_kernel_builtin_program` is never used
+    --> kernel/src/bpf/mod.rs:1097:19
+     |
+ 464 | impl BpfManager {
+     | --------------- method in this implementation
+...
+1097 |     pub(crate) fn load_kernel_builtin_program(
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `require_result` is never used
+  --> kernel/src/driver/virtio/hal.rs:59:4
+   |
+59 | fn require_result<T, E>(result: Result<T, E>, code: &'static str) -> T {
+   |    ^^^^^^^^^^^^^^
+
+warning: function `require_some` is never used
+  --> kernel/src/driver/virtio/hal.rs:66:4
+   |
+66 | fn require_some<T>(value: Option<T>, code: &'static str) -> T {
+   |    ^^^^^^^^^^^^
+
+warning: method `subscribe` is never used
+   --> kernel/src/mcore/mtask/scheduler/wait_channel.rs:138:19
+    |
+ 99 | impl<W: WaiterSink> WaitChannel<W> {
+    | ---------------------------------- method in this implementation
+...
+138 |     pub(crate) fn subscribe(&self) -> WaitRegistration<'_, W> {
+    |                   ^^^^^^^^^
+
+warning: struct `WaitRegistration` is never constructed
+   --> kernel/src/mcore/mtask/scheduler/wait_channel.rs:178:12
+    |
+178 | pub struct WaitRegistration<'a, W: WaiterSink> {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: method `park` is never used
+   --> kernel/src/mcore/mtask/scheduler/wait_channel.rs:184:12
+    |
+183 | impl<'a, W: WaiterSink> WaitRegistration<'a, W> {
+    | ----------------------------------------------- method in this implementation
+184 |     pub fn park(self, item: W::Item) {
+    |            ^^^^
+
+warning: method `shootdown_targets` is never used
+   --> kernel/src/mem/address_space/mod.rs:593:19
+    |
+229 | impl AddressSpace {
+    | ----------------- method in this implementation
+...
+593 |     pub(crate) fn shootdown_targets(&self) -> u64 {
+    |                   ^^^^^^^^^^^^^^^^^
+
+   Compiling fork_test v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/fork_test)
+   Compiling benchmark v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/benchmarks/system)
+   Compiling iio_demo v0.1.0 (/tmp/axiomos-producer-b8953b5/userspace/demos/iio_demo)
+warning: `kernel` (lib) generated 8 warnings (run `cargo fix --lib -p kernel` to apply 1 suggestion)
+warning: variants `BootloaderRevisionUnsupported`, `BootTimeUnavailable`, `EmbeddedRamdiskInitialization`, and `RootBlockDeviceMissing` are never constructed
+  --> kernel/src/main.rs:40:5
+   |
+39 | enum BootError {
+   |      --------- variants in this enum
+40 |     BootloaderRevisionUnsupported,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+41 |     BootTimeUnavailable,
+   |     ^^^^^^^^^^^^^^^^^^^
+42 |     FileSystemInitialization,
+43 |     EmbeddedRamdiskInitialization,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+44 |     IioSimulationInitialization,
+45 |     RootBlockDeviceMissing,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `BootError` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `kernel` (bin "kernel") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 39.43s

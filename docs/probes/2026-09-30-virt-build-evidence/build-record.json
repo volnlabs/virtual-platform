@@ -1,0 +1,121 @@
+{
+  "source_commit": "b8953b593d5f3be2a15960aef24ccef0fc507ca3",
+  "source_dirty": false,
+  "source_directory": "/tmp/axiomos-producer-b8953b5",
+  "repository": "https://github.com/pro-utkarshM/axiomOS",
+  "toolchain": "rustc 1.98.0-nightly (4c9d2bfe4 2026-07-01)\nbinary: rustc\ncommit-hash: 4c9d2bfe4ad7a65669098754964aaebe0ec1ced2\ncommit-date: 2026-07-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.0-nightly\nLLVM version: 22.1.8",
+  "cargo": "cargo 1.98.0-nightly (a335d47ff 2026-06-26)",
+  "trust_key": "RFC 8032 public CI fixture; not a production trust root",
+  "trust_key_sha256": "21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+  "environment": {
+    "CARGO_TARGET_DIR": "/tmp/axiomos-target-b8953b5",
+    "CARGO_BUILD_JOBS": "2",
+    "AXIOM_BPF_TRUSTED_KEY_PATH": "/tmp/axiomos-virt-b8953b5/ci-public-key.bin",
+    "AXIOM_ARTIFACT_PATHS": "/tmp/axiomos-virt-b8953b5/artifact-paths.env"
+  },
+  "commands": [
+    [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--release",
+      "--target",
+      "aarch64-unknown-none",
+      "--no-default-features",
+      "-p",
+      "axiomos",
+      "--features",
+      "aarch64_deps"
+    ],
+    [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--release",
+      "--target",
+      "aarch64-unknown-none",
+      "--no-default-features",
+      "-p",
+      "kernel",
+      "--features",
+      "virt,cloud-profile"
+    ]
+  ],
+  "steps": [
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--target",
+        "aarch64-unknown-none",
+        "--no-default-features",
+        "-p",
+        "axiomos",
+        "--features",
+        "aarch64_deps"
+      ],
+      "started_at": 1790722721.6326408,
+      "log": "build-0.log",
+      "exit_code": 0,
+      "finished_at": 1790722761.128249
+    },
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--target",
+        "aarch64-unknown-none",
+        "--no-default-features",
+        "-p",
+        "kernel",
+        "--features",
+        "virt,cloud-profile"
+      ],
+      "started_at": 1790722761.1284585,
+      "log": "build-1.log",
+      "exit_code": 101,
+      "finished_at": 1790722797.171958
+    }
+  ],
+  "outputs": {
+    "rootfs": {
+      "path": "/tmp/axiomos-target-b8953b5/aarch64-unknown-none/release/build/axiomos-106a096d82d6d714/out/disk.img",
+      "size": 20971520,
+      "sha256": "b91d956007415e50962605c6104a9228abf45a942e5fdd237874ca9bf84dafd6"
+    },
+    "virt_kernel": null
+  },
+  "source_dirty_after": false,
+  "outcome": "failed: virt kernel link has undefined __kernel_end",
+  "guest_launched": false,
+  "qualification_claims": [],
+  "feature_tree_command": [
+    "cargo",
+    "tree",
+    "--locked",
+    "--offline",
+    "-p",
+    "kernel",
+    "--target",
+    "aarch64-unknown-none",
+    "--no-default-features",
+    "--features",
+    "virt,cloud-profile",
+    "--format",
+    "{p} features=[{f}]"
+  ],
+  "evidence_sha256": {
+    "artifact-paths.env": "273ec57f38eb0dbe922f2baa1961e56f6bd640b28d58a570fe5b42c2a70db88f",
+    "build-0.log": "bd18864ef2c8046184baaca963ba056c8780c5430ea3208ff979a003e8e54dcf",
+    "build-1.log": "03ae6e3080238c6c1b9e638bc03bcc70a4095ac5795f8741cc5769ceaf446086",
+    "kernel-feature-tree.txt": "801df76b28208a198b3c9f1289adaa07d0503e7fc5b443ed547c397aa42f6cd0"
+  }
+}

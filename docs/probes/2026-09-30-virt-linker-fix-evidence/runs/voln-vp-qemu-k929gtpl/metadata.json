@@ -1,0 +1,48 @@
+{
+  "architecture": "aarch64",
+  "verb": "run",
+  "inputs": {
+    "AXIOMOS_KERNEL": {
+      "path": "/home/utkarsh/Work/volnlabs/axiomos-sim/target/qualification/axiomos-virt-a6f48d1/runs/voln-vp-qemu-k929gtpl/inputs/kernel.elf",
+      "sha256": "af93df7a57cee7edd863486ba4f00b2b154a9e63891ae1b9684830d0c65e920f"
+    },
+    "AXIOMOS_DISK_IMAGE": {
+      "path": "/home/utkarsh/Work/volnlabs/axiomos-sim/target/qualification/axiomos-virt-a6f48d1/runs/voln-vp-qemu-k929gtpl/inputs/rootfs.img",
+      "sha256": "b91d956007415e50962605c6104a9228abf45a942e5fdd237874ca9bf84dafd6"
+    }
+  },
+  "qemu_version": "QEMU emulator version 11.1.1\nCopyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers",
+  "argv": [
+    "/usr/bin/qemu-system-aarch64",
+    "-accel",
+    "tcg",
+    "-display",
+    "none",
+    "-monitor",
+    "none",
+    "-serial",
+    "stdio",
+    "-no-reboot",
+    "-machine",
+    "virt",
+    "-m",
+    "1G",
+    "-cpu",
+    "cortex-a57",
+    "-kernel",
+    "/home/utkarsh/Work/volnlabs/axiomos-sim/target/qualification/axiomos-virt-a6f48d1/runs/voln-vp-qemu-k929gtpl/inputs/kernel.elf",
+    "-drive",
+    "if=none,file=/home/utkarsh/Work/volnlabs/axiomos-sim/target/qualification/axiomos-virt-a6f48d1/runs/voln-vp-qemu-k929gtpl/inputs/rootfs.img,format=raw,id=hd0,snapshot=on",
+    "-device",
+    "virtio-blk-device,drive=hd0",
+    "-smp",
+    "1",
+    "-machine",
+    "virt-11.1,gic-version=2,virtualization=off,secure=off",
+    "-nic",
+    "none",
+    "-no-user-config"
+  ],
+  "cwd": "/home/utkarsh/Work/volnlabs/axiomos-sim",
+  "timeout_seconds": 30.0
+}

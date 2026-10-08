@@ -2,7 +2,14 @@
 
 **Date:** 2026-07-14 (revised 2026-07-15 after two external review rounds)
 **Status:** Approved design, pre-implementation
-**Context:** axiomOS boots on QEMU virt (x86_64, AArch64, RISC-V) and on real
+**September 30 scope amendment:** The next milestone is an identified build,
+qualified boot, strict single-core GPIO/PWM, then real managed-update/e-stop
+scenarios and one reproducible fault replay. Full peripheral inventory and four
+cores remain later goals. Artifact identity and adapter/CLI CI ship first;
+none of their stand-in checks qualifies a guest. See the
+[implementation plan](../plans/2026-09-30-runtime-testing-platform.md).
+
+**Context (historical design assumptions, not current qualification):** axiomOS boots on QEMU virt (x86_64, AArch64, RISC-V) and on real
 Raspberry Pi 5 with full userspace, eBPF, GPIO/PWM/IIO drivers, and a measured
 211ns single-core interrupt latency. No simulation infrastructure beyond QEMU
 virt exists. Jetson is a future target; nothing Jetson-specific is built now.
@@ -163,21 +170,24 @@ enumeration falls back to hardware-only coverage.
 
 ### RP1 peripheral models — reuse before building
 
-RP1 peripherals largely reuse RP2040-family IP, and Renode ships RP2040
-models (Raspberry Pi Pico support). Phase 3 therefore starts with an audit:
+RP1 has related peripheral IP, but usable RP2040 models must be verified in
+the pinned Renode distribution; the earlier availability assumption was not
+established by the local audit. Phase 3 starts with an audit:
 map each RP1 block the axiomOS drivers touch against Renode's RP2040 models,
 adapt what matches, and write only the genuinely missing pieces.
 
-- Custom models written as Renode **Python peripherals** first. Python
+- Simple transaction-local models may use **Python peripherals**. Advanced
+  interconnect, interrupt wiring and virtual-time behavior use C# as required. Python
   peripherals are interpreted per register access — a peripheral hammered on
   every GPIO toggle or interrupt may bottleneck. Migration path, explicit:
   prototype in Python → profile once the driver suite is green → rewrite
-  only measured-hot peripherals in C#. No premature C#.
+  measured-hot simple peripherals in C#. The PCIe RC/endpoint is C# from the start.
 - **Register-accurate for registers the axiomOS drivers touch**;
   datasheet-complete where the driver needs it. Models are built in the phase
   where the driver test suite demands them — never speculatively.
 - **Unmodeled-register tripwire:** any access to an unimplemented register
-  logs a warning; **strict mode** (used in CI) makes it fatal. Gaps surface
+  logs a warning; **strict mode** ships with the first models and makes both
+  unmapped bus accesses and unexplained mapped-register operations fatal. Gaps surface
   loudly, never silently.
 - No generic `Device → GPIO/PWM/…` abstraction layer: the kernel image is
   unmodified, so drivers speak RP1 registers — an abstract device interface
@@ -192,8 +202,9 @@ adapt what matches, and write only the genuinely missing pieces.
 - **Value injection:** Renode monitor commands + Robot Framework keywords,
   e.g. `inject imu.accel_x 9.81 @ t=10ms`.
 - **Trace replay:** traces recorded from real Pi 5 runs, delivered at
-  virtual-time timestamps. Deterministic: same trace → identical execution
-  every run. Trace format is a voln-vp-owned specification (see Trace
+  virtual-time timestamps. Reproducibility applies to pinned simulated
+  scenarios with defined initial state and virtual-time settings; physical
+  sensor samples alone cannot reproduce arbitrary hardware execution. Trace format is a voln-vp-owned specification (see Trace
   Format), not a Renode artifact.
 - **Actuator capture:** PWM model logs duty/period changes with virtual
   timestamps, enabling assertions like "PWM reached 50% within 5 ms (virtual)
@@ -234,7 +245,7 @@ voln-vp/
   backends/
     qemu/                  # manifest + adapters wrapping existing virt configs
     renode/
-      peripherals/         # pcie_rc.py, mailbox.py, rp1_*.py (only what RP2040
+      peripherals/         # C# interconnect, mailbox.py, RP1 models (only what existing
                            #   models don't cover)
       scripts/             # .resc boot/scenario scripts
       tests/               # Robot Framework suites
@@ -274,7 +285,9 @@ over-wrap what the backends already are.
 - qemu backend: boot smoke on x86_64, AArch64, RISC-V.
 - renode backend: `virt-pi5` boot-to-userspace; driver suite — GPIO toggle
   readback, PWM sweep capture, I²C IMU read, SPI transfer; one determinism
-  check (same scenario twice → byte-identical UART output). Strict mode on.
+  check (clean single-core runs → matching canonical actuator/audit streams).
+  Strict mode on. These guest jobs remain gated on qualified artifacts/models;
+  adapter/CLI checks run independently now.
 
 **Nightly:**
 - Full Robot scenario suites and trace replays.
@@ -318,7 +331,7 @@ over-wrap what the backends already are.
 | Latency backend | gem5 reserved slot, design compressed to calibration note (revised twice 2026-07-15; was "day one") | Day-one calibrated gem5 build; full deletion per reviewer |
 | Primary CLI axis | Board-first (`--board`, backend defaulted from board manifest) | Backend-first `--tier`/`--backend` axis |
 | Artifact ownership | Traces + board manifests = neutral voln-vp formats; device models + Robot suites = backend-native, port cost accepted | Simulator-agnostic device/scenario abstraction with converters |
-| Peripheral language | Python first, profile, rewrite measured-hot models in C# | Premature C#; Python forever |
+| Peripheral language | Python for simple transactions; C# for required interconnect/IRQ/time behavior and measured hot paths | Python-only interconnect; speculative model rewrites |
 | Distributed sim | Not foreclosed (backends are processes); nothing designed | Message-bus abstraction now |
 | RP1 attachment | Full PCIe model (RC + endpoint + BARs) | Flat-mapped registers (kept as fallback) |
 | RP1 model sourcing | Adapt Renode RP2040 models first, write only gaps (added 2026-07-15) | Writing all models from scratch |

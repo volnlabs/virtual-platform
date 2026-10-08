@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "source": {
+    "repository": "https://github.com/pro-utkarshM/axiomOS",
+    "commit": "a6f48d167437f94807899c53e2f2b1c92abd8b24",
+    "dirty": false
+  },
+  "build": {
+    "target": "aarch64-unknown-none",
+    "architecture": "aarch64",
+    "profile": "release",
+    "board": "virt",
+    "features": [
+      "aarch64_arch",
+      "cloud-profile",
+      "virt"
+    ],
+    "toolchain": "rustc 1.98.0-nightly (4c9d2bfe4 2026-07-01)\nbinary: rustc\ncommit-hash: 4c9d2bfe4ad7a65669098754964aaebe0ec1ced2\ncommit-date: 2026-07-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.0-nightly\nLLVM version: 22.1.8",
+    "producer_id": "axiomos-virt-a6f48d1"
+  },
+  "artifacts": {
+    "kernel": {
+      "path": "/home/utkarsh/Work/volnlabs/axiomos-sim/target/qualification/axiomos-virt-a6f48d1/runs/voln-vp-qemu-k929gtpl/inputs/kernel.elf",
+      "size": 893120,
+      "sha256": "af93df7a57cee7edd863486ba4f00b2b154a9e63891ae1b9684830d0c65e920f"
+    },
+    "rootfs": {
+      "path": "/home/utkarsh/Work/volnlabs/axiomos-sim/target/qualification/axiomos-virt-a6f48d1/runs/voln-vp-qemu-k929gtpl/inputs/rootfs.img",
+      "size": 20971520,
+      "sha256": "b91d956007415e50962605c6104a9228abf45a942e5fdd237874ca9bf84dafd6"
+    }
+  },
+  "rootfs": {
+    "storage": "external",
+    "role": "rootfs"
+  },
+  "boot_contract": "axiomos-userspace-v1",
+  "manifest_sha256": "ab128121e38d215e3fb6f88038c96ad205b900997c8340d508070fd3b86246b7"
+}

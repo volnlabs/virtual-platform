@@ -1,0 +1,153 @@
+   Compiling scopeguard v1.2.0
+   Compiling typenum v1.20.1
+   Compiling lock_api v0.4.14
+   Compiling thiserror v2.0.18
+   Compiling spin v0.10.0
+   Compiling log v0.4.28
+   Compiling generic-array v0.14.7
+   Compiling bitflags v2.10.0
+   Compiling zerocopy v0.9.0-alpha.0
+   Compiling kernel_physical_memory v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_physical_memory)
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling cpufeatures v0.2.17
+   Compiling digest v0.10.7
+   Compiling hybrid-array v0.4.13
+   Compiling cfg-if v1.0.4
+   Compiling mkfs-filesystem v0.1.0 (https://github.com/tsatke/mkfs#24c1cfba)
+   Compiling zerocopy v0.8.28
+   Compiling curve25519-dalek v4.1.3
+   Compiling kernel_virtual_memory v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_virtual_memory)
+   Compiling kernel_abi v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_abi)
+   Compiling subtle v2.6.1
+   Compiling signature v2.2.0
+   Compiling ed25519 v2.2.3
+   Compiling kernel_vfs v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_vfs)
+   Compiling sha2 v0.10.9
+   Compiling crypto-common v0.2.0-rc.5
+   Compiling block-buffer v0.11.0
+   Compiling kernel_memapi v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_memapi)
+   Compiling either v1.15.0
+   Compiling itertools v0.14.0
+   Compiling linkme v0.3.36
+   Compiling digest v0.11.0-rc.4
+   Compiling ed25519-dalek v2.2.0
+   Compiling safe-mmio v0.2.5
+   Compiling kernel v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel)
+   Compiling keccak v0.2.0-rc.0
+   Compiling kernel_device v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_device)
+   Compiling spinning_top v0.2.5
+   Compiling cordyceps v0.3.4
+   Compiling conquer-util v0.3.0
+   Compiling rustc-demangle v0.1.26
+   Compiling gimli v0.33.0
+   Compiling fallible-iterator v0.3.0
+   Compiling embedded-io v0.6.1
+   Compiling tock-registers v0.8.1
+   Compiling aarch64-cpu v9.4.0
+   Compiling addr2line v0.26.1
+   Compiling virtio-drivers v0.12.0
+   Compiling conquer-once v0.4.0
+   Compiling kernel_run_queue v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_run_queue)
+   Compiling bitfield v0.19.4
+   Compiling volatile v0.6.1
+   Compiling linked_list_allocator v0.10.5
+   Compiling kernel_devfs v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_devfs)
+   Compiling kernel_elfloader v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_elfloader)
+   Compiling sha3 v0.11.0-rc.3
+   Compiling uart_16550 v0.4.0
+   Compiling kernel_bpf v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_bpf)
+   Compiling kernel_pci v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_pci)
+   Compiling kernel_syscall v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_syscall)
+   Compiling kernel_usermem v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_usermem)
+   Compiling kernel_map_transaction v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_map_transaction)
+   Compiling mkfs-ext2 v0.1.0 (https://github.com/tsatke/mkfs#24c1cfba)
+   Compiling jiff v0.2.16
+   Compiling shrike_link v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/shrike_link)
+   Compiling fdt v0.1.5
+   Compiling elf v0.7.4
+   Compiling kernel_time v0.1.0 (/tmp/axiomos-producer-b8953b5/kernel/crates/kernel_time)
+warning: unused import: `VirtAddr`
+  --> kernel/src/mcore/mtask/process/trampoline.rs:26:39
+   |
+26 | use crate::arch::{PageSize, Size4KiB, VirtAddr};
+   |                                       ^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `load_kernel_builtin_program` is never used
+    --> kernel/src/bpf/mod.rs:1097:19
+     |
+ 464 | impl BpfManager {
+     | --------------- method in this implementation
+...
+1097 |     pub(crate) fn load_kernel_builtin_program(
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `subscribe` is never used
+   --> kernel/src/mcore/mtask/scheduler/wait_channel.rs:138:19
+    |
+ 99 | impl<W: WaiterSink> WaitChannel<W> {
+    | ---------------------------------- method in this implementation
+...
+138 |     pub(crate) fn subscribe(&self) -> WaitRegistration<'_, W> {
+    |                   ^^^^^^^^^
+
+warning: struct `WaitRegistration` is never constructed
+   --> kernel/src/mcore/mtask/scheduler/wait_channel.rs:178:12
+    |
+178 | pub struct WaitRegistration<'a, W: WaiterSink> {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: method `park` is never used
+   --> kernel/src/mcore/mtask/scheduler/wait_channel.rs:184:12
+    |
+183 | impl<'a, W: WaiterSink> WaitRegistration<'a, W> {
+    | ----------------------------------------------- method in this implementation
+184 |     pub fn park(self, item: W::Item) {
+    |            ^^^^
+
+warning: method `shootdown_targets` is never used
+   --> kernel/src/mem/address_space/mod.rs:593:19
+    |
+229 | impl AddressSpace {
+    | ----------------- method in this implementation
+...
+593 |     pub(crate) fn shootdown_targets(&self) -> u64 {
+    |                   ^^^^^^^^^^^^^^^^^
+
+warning: `kernel` (lib) generated 6 warnings (run `cargo fix --lib -p kernel` to apply 1 suggestion)
+warning: variants `BootloaderRevisionUnsupported`, `BootTimeUnavailable`, `EmbeddedRamdiskInitialization`, and `RootBlockDeviceMissing` are never constructed
+  --> kernel/src/main.rs:40:5
+   |
+39 | enum BootError {
+   |      --------- variants in this enum
+40 |     BootloaderRevisionUnsupported,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+41 |     BootTimeUnavailable,
+   |     ^^^^^^^^^^^^^^^^^^^
+42 |     FileSystemInitialization,
+43 |     EmbeddedRamdiskInitialization,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+44 |     IioSimulationInitialization,
+45 |     RootBlockDeviceMissing,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `BootError` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+error: linking with `rust-lld` failed: exit status: 1
+  |
+  = note:  "rust-lld" "-flavor" "gnu" "--fix-cortex-a53-843419" "/tmp/axiomos-target-b8953b5/aarch64-unknown-none/release/deps/rustcouaFBu/symbols.o" "<4 object files omitted>" "--as-needed" "-Bstatic" "/tmp/axiomos-target-b8953b5/aarch64-unknown-none/release/deps/{libkernel-b0f4a0da7281b551,liblinked_list_allocator-860e3103d2fab03c,libspinning_top-42dd020eda8b8c31,libjiff-8366d092895956d2,libkernel_syscall-9a228e104de04eac,libkernel_map_transaction-47fb2fbafd373a48,libkernel_usermem-f99e1c59409fac5b,libkernel_time-f8b0a43a737d9400,libkernel_run_queue-2bbe7f0fdd4a4d62,libcordyceps-ab3779d1d761a939,libkernel_elfloader-a57cf8b138835ab9,libkernel_memapi-904d3e01e3a50094,libitertools-ec0a85e1ee5ae632,libeither-fe2ead3b9137392b,libvirtio_drivers-786e7b6e5631aace,libsafe_mmio-ba5a9c97ddeededa,libembedded_io-5e93f0129e3d3855,libzerocopy-eb40905284532794,libkernel_devfs-e5f11bece961fb5f,libkernel_vfs-7286a11d352132e5,libkernel_device-90b0651ef33294f3,libelf-f8e2b8a365f59266,libaddr2line-5e72fdc225dc6164,librustc_demangle-5191a4693ce9038b,libgimli-503e21032278ce3c,libfallible_iterator-c2cd8cb5c6a5d9e1,libfdt-2cd0e139aae755c0,libkernel_virtual_memory-cc28f73397611ac2,libkernel_physical_memory-579114c0e44eece1,libkernel_bpf-181e60bed5ed2ea7,libkernel_abi-208fcba067e19786,libed25519_dalek-0133bcb8ccac9b58,libsha2-f88361bba1c10549,libcurve25519_dalek-ead5028226088393,libsubtle-6dccfd3298893004,libcfg_if-c4112fad78bfcd08,libdigest-6cb7c4ab6ff9fa1b,libblock_buffer-c995ffdf3c3a3968,libcrypto_common-b3cc735e14bd89fa,libgeneric_array-2945bf4e29a1a2d7,libtypenum-e3ce911c93c1903f,libed25519-80ed048a06c08ad0,libsignature-dcd2b365e095e956,libzerocopy-27fa79b4cdad3d9a,libthiserror-917f240b8db64d9c,libspin-db0214a62d17120b,liblock_api-1d9391dd85dbdbc0,libscopeguard-b737bf591f7c7bb3,libconquer_once-ab46fe58881091c8,liblog-85eb1eea59155da7,libext2-6535215e48d9662e,libbitflags-ff94400b124a7345,libfilesystem-12cac3cc1e1415a4}.rlib" "<sysroot>/lib/rustlib/aarch64-unknown-none/lib/{liballoc-*,libcore-*,libcompiler_builtins-*}.rlib" "-L" "/tmp/axiomos-target-b8953b5/aarch64-unknown-none/release/deps/rustcouaFBu/raw-dylibs" "-Bdynamic" "--eh-frame-hdr" "-z" "noexecstack" "-L" "/tmp/axiomos-target-b8953b5/aarch64-unknown-none/release/build/kernel-4b2caf9f8c68d792/out" "-o" "/tmp/axiomos-target-b8953b5/aarch64-unknown-none/release/deps/kernel-6d115fa3a3e6da12" "--gc-sections" "-O1" "--strip-debug" "--image-base=0x100000000" "-z" "nostart-stop-gc" "-T/tmp/axiomos-producer-b8953b5/kernel/linker-virt.ld"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: rust-lld: error: undefined symbol: __kernel_end
+          >>> referenced by lib.rs:229 (kernel/src/lib.rs:229)
+          >>>               kernel-b0f4a0da7281b551.kernel.433c6b0de2ce0eb9-cgu.14.rcgu.o:(kernel::init) in archive /tmp/axiomos-target-b8953b5/aarch64-unknown-none/release/deps/libkernel-b0f4a0da7281b551.rlib
+          >>> referenced by lib.rs:229 (kernel/src/lib.rs:229)
+          >>>               kernel-b0f4a0da7281b551.kernel.433c6b0de2ce0eb9-cgu.14.rcgu.o:(kernel::init) in archive /tmp/axiomos-target-b8953b5/aarch64-unknown-none/release/deps/libkernel-b0f4a0da7281b551.rlib
+          
+
+warning: `kernel` (bin "kernel") generated 1 warning
+error: could not compile `kernel` (bin "kernel") due to 1 previous error; 1 warning emitted

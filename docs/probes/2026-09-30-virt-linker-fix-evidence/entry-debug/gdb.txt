@@ -1,0 +1,21 @@
+The target architecture is set to "aarch64".
+0x0000000040080000 in _start_asm ()
+pc             0x40080000          0x40080000 <_start_asm>
+x0             0x0                 0
+cpsr           0x400003c5          [ SP EL=1 F I A D BTYPE=0 Z ]
+=> 0x40080000 <_start_asm>:	mov	x9, #0x1000                	// #4096
+   0x40080004 <_start_asm+4>:	movk	x9, #0x7d00, lsl #16
+   0x40080008 <_start_asm+8>:	movk	x9, #0x10, lsl #32
+   0x4008000c <_start_asm+12>:	mov	w10, #0x7b                  	// #123
+   0x40080010 <_start_asm+16>:	str	w10, [x9]
+   0x40080014 <_start_asm+20>:	mov	x19, x0
+   0x40080018 <_start_asm+24>:	mrs	x0, mpidr_el1
+   0x4008001c <_start_asm+28>:	and	x0, x0, #0xff
+0x0000000000000200 in ?? ()
+pc             0x200               0x200
+x0             0x0                 0
+x9             0x107d001000        70816632832
+cpsr           0x3c5               [ SP EL=1 F I A D BTYPE=0 ]
+$1 = void
+$2 = void
+[Inferior 1 (process 1) detached]

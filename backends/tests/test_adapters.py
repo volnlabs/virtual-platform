@@ -4,10 +4,13 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import tempfile
 import time
 import unittest
+
+from test_artifacts import bundle
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -67,6 +70,17 @@ else:
         print(text[:12], end="", flush=True)
         time.sleep(0.03)
         text = text[12:]
+    if mode == "cleanup_hold":
+        import signal
+        def hold(signum, frame):
+            (root / "cleanup-started").write_text("ready")
+        signal.signal(signal.SIGTERM, hold)
+    if mode == "shutdown_fatal":
+        import signal
+        def terminate(signum, frame):
+            print("BOOT_FATAL during shutdown", flush=True)
+            sys.exit(0)
+        signal.signal(signal.SIGTERM, terminate)
     print(text, flush=True)
     if mode == "early":
         sys.exit(0)
@@ -79,6 +93,9 @@ class AdapterTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix="voln-vp tests ")
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
+        if os.environ.get("VOLN_VP_TEST_ARTIFACT_DIR"):
+            destination = Path(os.environ["VOLN_VP_TEST_ARTIFACT_DIR"]).resolve() / self.id()
+            self.addCleanup(shutil.copytree, self.root, destination, dirs_exist_ok=True)
         self.bin = self.root / "bin"
         self.bin.mkdir()
         for name in ("renode", "qemu-system-aarch64", "qemu-system-x86_64", "qemu-system-riscv64"):
@@ -196,6 +213,154 @@ class AdapterTests(unittest.TestCase):
                 with self.subTest(backend=backend, timeout=value):
                     self.env["VOLN_VP_TIMEOUT"] = value
                     self.assertNotEqual(self.invoke(backend).returncode, 0)
+
+    def test_qemu_fatal_during_cleanup_cannot_be_reported_as_pass(self):
+        self.env["FAKE_MODE"] = "shutdown_fatal"
+        result = self.invoke("qemu")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("BOOT_FATAL during shutdown", result.stderr)
+        self.assertEqual(self.reports()[0]["outcome"], "fail")
+
+    def test_qemu_run_invalid_architecture_retains_result(self):
+        self.env["VOLN_VP_ARCH"] = "unsupported"
+        self.assertNotEqual(self.invoke("qemu", "run").returncode, 0)
+        self.assertEqual(len(self.reports()), 1)
+        self.assertEqual(self.reports()[0]["outcome"], "unsupported")
+
+    def wait_for_file(self, path):
+        deadline = time.monotonic() + 3
+        while not path.exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(path.exists(), f"timed out waiting for {path.name}")
+
+    def test_interrupt_during_cleanup_still_stops_qemu(self):
+        self.env["FAKE_MODE"] = "cleanup_hold"
+        process = subprocess.Popen([str(ROOT / "backends/qemu/adapters/test.sh")],
+                                   env=self.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   text=True, start_new_session=True)
+        guest_pid = None
+        try:
+            self.wait_for_file(self.root / "cleanup-started")
+            guest_pid = int((self.root / "pid").read_text())
+            process.send_signal(signal.SIGTERM)
+            stdout, stderr = process.communicate(timeout=8)
+            self.assertEqual(process.returncode, 143, stdout + stderr)
+            self.assert_stopped(guest_pid)
+            self.assertEqual(self.reports()[0]["exit_code"], 143)
+        finally:
+            if guest_pid is not None:
+                try:
+                    os.killpg(guest_pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGKILL)
+            process.communicate()
+
+    def test_interrupt_during_provenance_has_terminal_result(self):
+        git = self.bin / "git"
+        git.write_text("#!/usr/bin/env python3\nimport os,pathlib,time\np = pathlib.Path(os.environ['FAKE_ROOT'])\n(p / 'git-started').write_text(str(os.getpid()))\ntime.sleep(60)\n")
+        git.chmod(0o755)
+        for backend in ("qemu", "renode"):
+            with self.subTest(backend=backend):
+                marker = self.root / "git-started"
+                marker.unlink(missing_ok=True)
+                process = subprocess.Popen([str(ROOT / "backends" / backend / "adapters/test.sh")],
+                                           env=self.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                           text=True, start_new_session=True)
+                try:
+                    self.wait_for_file(marker)
+                    process.send_signal(signal.SIGTERM)
+                    stdout, stderr = process.communicate(timeout=8)
+                    self.assertEqual(process.returncode, 143, stdout + stderr)
+                    reports = [r for r in self.reports() if r["backend"] == backend]
+                    self.assertEqual(len(reports), 1)
+                    self.assertTrue(reports[0]["completed"])
+                    self.assertEqual(reports[0]["outcome"], "fail")
+                    self.assertEqual(reports[0]["exit_code"], 143)
+                    self.assert_stopped(int(marker.read_text()))
+                finally:
+                    if process.poll() is None:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    process.communicate()
+
+    def reports(self):
+        return [json.loads(path.read_text()) for path in (self.root / "artifacts").glob("*/result.json")]
+
+    def manifest_bundle(self, backend):
+        directory = self.root / "bundle"
+        directory.mkdir(exist_ok=True)
+        path, manifest = bundle(directory, "virt" if backend == "qemu" else "virt-pi5")
+        for key in list(self.env):
+            if key.startswith("AXIOMOS_"):
+                del self.env[key]
+        self.env["VOLN_VP_ARTIFACT_MANIFEST"] = str(path)
+        return path, manifest
+
+    def test_manual_result_never_claims_qualification(self):
+        for backend in ("qemu", "renode"):
+            result = self.invoke(backend)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(len(self.reports()), 2)
+        for report in self.reports():
+            self.assertEqual(report["outcome"], "pass")
+            self.assertEqual(report["identity"], "manual")
+            self.assertEqual(report["qualification_claims"], [])
+            self.assertTrue(report["completed"])
+            self.assertIn("uart.log", report["evidence"])
+            self.assertTrue(report["execution"]["argv"])
+            self.assertTrue(report["execution"]["version"])
+            self.assertTrue(report["implementation"]["files"])
+
+    def test_manifest_launches_staged_bytes_and_retains_identity(self):
+        for backend in ("qemu", "renode"):
+            path, manifest = self.manifest_bundle(backend)
+            result = self.invoke(backend)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for report in self.reports():
+            self.assertEqual(report["identity"], "manifest_matched")
+            self.assertEqual(report["qualification_claims"], [])
+            self.assertEqual(report["boot_contract"], "axiomos-userspace-v1")
+            self.assertEqual(report["inputs"]["source"]["commit"], "a" * 40)
+            self.assertTrue(report["observed_milestones"])
+        args = json.loads((self.root / "invocation.json").read_text())
+        self.assertNotIn("-semihosting", args)
+
+    def test_manifest_rejection_never_launches_and_writes_result(self):
+        for backend in ("qemu", "renode"):
+            path, manifest = self.manifest_bundle(backend)
+            manifest["artifacts"]["kernel"]["sha256"] = "0" * 64
+            path.write_text(json.dumps(manifest))
+            result = self.invoke(backend)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse((self.root / "invocation.json").exists())
+        self.assertEqual(len(self.reports()), 2)
+        for report in self.reports():
+            self.assertEqual(report["outcome"], "fail")
+            self.assertIn("sha256", report["reason"])
+
+    def test_manifest_environment_and_argument_conflicts_rejected(self):
+        for backend in ("qemu", "renode"):
+            self.manifest_bundle(backend)
+            for key, value in (("AXIOMOS_KERNEL", str(self.input)), ("VOLN_VP_BOOT_MARKER", "weakened"),
+                               ("VOLN_VP_DTB", str(self.input)), ("VOLN_VP_ARCH", "x86_64")):
+                with self.subTest(backend=backend, key=key):
+                    self.env[key] = value
+                    self.assertNotEqual(self.invoke(backend).returncode, 0)
+                    del self.env[key]
+            self.assertNotEqual(self.invoke(backend, "test", "--", "-smp", "2").returncode, 0)
+            self.assertFalse((self.root / "invocation.json").exists())
+
+    def test_all_failure_modes_have_terminal_results(self):
+        for backend in ("qemu", "renode"):
+            for mode, code in (("fatal", 1), ("timeout", 124), ("version_exit", 7)):
+                self.env.update(FAKE_MODE=mode, VOLN_VP_TIMEOUT="0.3s")
+                self.assertEqual(self.invoke(backend).returncode, code)
+        self.assertEqual(len(self.reports()), 6)
+        for report in self.reports():
+            self.assertTrue(report["completed"])
+            self.assertEqual(report["outcome"], "fail")
+            self.assertEqual(report["qualification_claims"], [])
 
     def assert_stopped(self, pid):
         # An adopted zombie is already stopped; only its parent can reap it.
