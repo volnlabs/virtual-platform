@@ -74,13 +74,13 @@ Source: [`rp1_irq.rs`](https://github.com/pro-utkarshM/axiomOS/blob/a6f48d167437
 All GPIO and pad words are accessed as 32-bit registers. There are 28 GPIOs;
 per-pin register stride is 8 bytes. GPIO status is read-only; control and pad
 configuration use read/modify/write. Set/clear aliases are used for interrupt
-enables and W1C IRQ reset. The ordinary RP1 alias offsets are `+0x2000` set and
-`+0x3000` clear.
+enables and the self-clearing IRQ reset pulse. The ordinary RP1 alias offsets
+are `+0x2000` set and `+0x3000` clear.
 
 | Register | Offset / fields | Driver behavior |
 |---|---|---|
 | STATUS | pin `+0x00` | Read-only; input level bit 17, event bits 20–23 (fall/rise/low/high). |
-| CTRL | pin `+0x04` | FUNCSEL bits 4:0 mask `0x1f`; OUTOVER bits 13:12; OEOVER bits 15:14; IRQ enables bits 20–23; IRQRESET bit 28 W1C. |
+| CTRL | pin `+0x04` | FUNCSEL bits 4:0 mask `0x1f`; OUTOVER bits 13:12; OEOVER bits 15:14; IRQ enables bits 20–23; IRQRESET bit 28 self-clearing pulse. |
 | Raw interrupt status | `+0x100` | Read; masked to 28 GPIO bits for diagnostic state. |
 | PCIe interrupt enable/status | `+0x11c/+0x124` | Read/write through aliases for enable; read pending bitmap masked to 28 bits. |
 | PADS_BANK0 GPIO pad | `+0x04 + 4*pin` | Schmitt bit 1; pull bits 3:2 (none=0/down=1/up=2); input enable bit 6; output disable bit 7. |
@@ -93,6 +93,14 @@ OEOVER enabled (3), and configures the pad. Input setup selects GPIO function,
 disables OEOVER, and enables pad input plus Schmitt. Source has no API for
 drive strength, debounce, or level-event arming; interrupt enable exposes only
 rising/falling edges.
+
+The [vendor datasheet, section 3.1](https://datasheets.raspberrypi.com/rp1/rp1-peripherals.pdf#page=18)
+specifies CTRL reset `0x9f` (NULL function, F_M=4).
+STATUS's unfiltered edge bits latch independently of masks; its level bits
+track the input and survive IRQRESET while their level remains present.
+Pad pull-up/down controls are independent enable bits; the driver's enum uses
+the none/down/up subset. The [isolated GPIO model](rp1-gpio-model.md) covers
+only the named unfiltered IO_BANK0 fields, not the complete driver sequence.
 
 The IRQ route sequence in `initialize_gpio_route()` is: check PCIe link; assign
 bus range; locate RP1 MSI-X; mask/disable MSI-X; map BARs and outbound window;

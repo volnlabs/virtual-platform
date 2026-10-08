@@ -4,6 +4,12 @@ plans: docs/superpowers/plans/2026-09-30-runtime-testing-platform.md
 this file is the at-a-glance tracker
 follow the spec's phase order. stop gates between phases are real.
 
+2026-10-01 — isolated RP1 GPIO model slice
+  [x] strict unfiltered IO_BANK0 registers, atomic aliases and forced-output capture
+  [x] conditioned input samples, edge latches, live levels and native IRQ masking/ack
+  [ ] pads, filtering, RIO/mux, PCIe delivery and real guest-driver integration
+  Scope: docs/contracts/rp1-gpio-model.md. Unit-only; full driver setup remains unsupported.
+
 2026-10-01 — isolated RP1 PWM model slice
   [x] strict C# PWM register subset with native virtual-time update/overflow
   [x] ordered applied-state capture; disable/reset and invalid-access checks
