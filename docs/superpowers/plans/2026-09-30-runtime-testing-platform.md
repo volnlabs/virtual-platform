@@ -16,7 +16,13 @@ implementation and regression checks. Hosted CI passed at `a5c5423` (run
 failed to link the virt kernel. A subsequent isolated linker fix produced a
 validated bundle, but [three launches timed out](../../probes/2026-09-30-virt-linker-fix.md)
 at the guest entry path. No guest qualification is claimed.
-Tasks 4–8 remain future work gated as described below.
+Tasks 4–8 remain gated as described below, except for the task 5 transport slice.
+
+The [native suite transport](../../contracts/runtime-scenarios.md) portion of
+task 5 is implemented independently of guest boot qualification: mode dispatch,
+Renode Robot results, watchdog, cleanup and adapter regression checks. Actual
+guest readiness/management/correlated-completion assertions remain unbound.
+No AxiomOS edits or builds are authorized from this project.
 
 ## Global constraints
 

@@ -10,7 +10,7 @@ filesystem cannot guarantee a retained report.
 | Field | Meaning |
 |---|---|
 | `schema_version`, `run_id` | Version `1` and unique run directory name |
-| `backend`, `board`, `architecture`, `verb`, `mode` | Selected adapter and boot invocation |
+| `backend`, `board`, `architecture`, `verb`, `mode` | Selected adapter and lifecycle (`boot` or `runtime`) |
 | `completed`, `exit_code`, `outcome`, `reason` | Terminal status; outcome is `pass`, `fail`, or `unsupported` |
 | `identity` | `manual`, `manifest_matched`, or `unvalidated` when validation did not complete |
 | `qualification_claims` | Always `[]` in this tranche; observation is not qualification |
@@ -19,6 +19,7 @@ filesystem cannot guarantee a retained report.
 | `execution` | Executable path/hash, version output, argv, working directory, environment controls and adapter settings |
 | `implementation` | voln-vp Git commit/dirty state when available, plus relevant adapter/model/platform file hashes |
 | `evidence` | Paths relative to this run directory |
+| `scenario`, `scenario_result` | Runtime suite source/staged path and hash; passing Robot test count/output when validated |
 
 Manifest validation failures exit 2. Unsupported manifest versions/profiles and
 architectures also exit 2, with outcome `unsupported`. Timeout remains 124,
@@ -37,5 +38,6 @@ Renode's fixed platform is Cortex-A78, one core, 8 GiB RAM, EL1 entry.
 
 Keep `uart.log`, backend/version logs, original manifest, normalized inputs,
 result and staged bytes together. Existing QEMU `metadata.json` and Renode
-`inputs.sha256`/`command.txt` remain available. These reports do not implement
-runtime scenarios, attest producer claims, or certify any guest revision.
+`inputs.sha256`/`command.txt` remain available. These reports do not attest
+producer claims or certify any guest revision.
+For native runtime suite semantics, see [runtime scenarios](runtime-scenarios.md).

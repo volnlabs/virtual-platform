@@ -2,11 +2,12 @@
 
 $axiomos_kernel?=@/dev/null
 $virt_pi5_dtb?=@/dev/null
+$virt_pi5_platform?=@boards/virt-pi5/renode/virt-pi5.repl
 
 using sysbus
 
 mach create
-machine LoadPlatformDescription @boards/virt-pi5/renode/virt-pi5.repl
+machine LoadPlatformDescription $virt_pi5_platform
 
 # Renode ARMv8-A CPUs reset in EL3. The raw axiomOS kernel follows the QEMU
 # direct-kernel contract and expects to enter at EL1 without an EL3/EL2 firmware

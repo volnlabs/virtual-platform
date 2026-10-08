@@ -42,6 +42,14 @@ pub struct RunArgs {
     #[arg(long)]
     pub artifact_manifest: Option<PathBuf>,
 
+    /// Test lifecycle (defaults to boot)
+    #[arg(long, value_parser = ["boot", "runtime"])]
+    pub mode: Option<String>,
+
+    /// Backend-native runtime test suite
+    #[arg(long)]
+    pub scenario: Option<PathBuf>,
+
     #[arg(long)]
     pub dry_run: bool,
 
@@ -71,5 +79,7 @@ fn run_adapter(root: &Path, args: &RunArgs, verb: Verb) -> Result<()> {
         &args.extra,
         args.dry_run,
         args.artifact_manifest.as_deref(),
+        args.mode.as_deref(),
+        args.scenario.as_deref(),
     )
 }
