@@ -4,6 +4,13 @@ plans: docs/superpowers/plans/2026-09-30-runtime-testing-platform.md
 this file is the at-a-glance tracker
 follow the spec's phase order. stop gates between phases are real.
 
+2026-10-01 — isolated RP1 PWM model slice
+  [x] strict C# PWM register subset with native virtual-time update/overflow
+  [x] ordered applied-state capture; disable/reset and invalid-access checks
+  [x] opt-in Renode warning gate, shared adapter regressions
+  [ ] PCIe attachment, CLOCKS, GPIO/pads and canonical board integration
+  Scope: docs/contracts/rp1-pwm-model.md. Unit-model evidence only; guest gates remain open.
+
 2026-10-01 — RP1 source and installed-model audit
   [x] source-only GPIO/PWM/attachment inventory at a6f48d1
   [x] installed Renode type inventory and native access-warning probes

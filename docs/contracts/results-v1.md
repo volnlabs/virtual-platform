@@ -20,6 +20,7 @@ filesystem cannot guarantee a retained report.
 | `implementation` | voln-vp Git commit/dirty state when available, plus relevant adapter/model/platform file hashes |
 | `evidence` | Paths relative to this run directory |
 | `scenario`, `scenario_result` | Runtime suite source/staged path and hash; passing Robot test count/output when validated |
+| `strict_mmio` | Validated Renode warning-gate selection; not certification of stock-model register coverage |
 
 Manifest validation failures exit 2. Unsupported manifest versions/profiles and
 architectures also exit 2, with outcome `unsupported`. Timeout remains 124,

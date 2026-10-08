@@ -65,6 +65,8 @@ if "renode" in sys.argv[0]:
     (script.parent / "uart.log").write_text(text)
     if mode == "monitor":
         print("There was an error executing command 'bad'")
+    if mode == "unmapped":
+        print("[WARNING] sysbus: ReadDoubleWord from non existing peripheral at 0x20000.")
 else:
     if mode == "fragment":
         print(text[:12], end="", flush=True)
@@ -114,6 +116,8 @@ if mode == "fatal":
     (out.parent / "uart.log").write_text("BOOT_FATAL after completion\n")
 if mode == "emulator_error":
     (out / "emulator.log").write_text("[ERROR] peripheral failure\n")
+if mode == "unmapped":
+    (out / "emulator.log").write_text("[WARNING] sysbus: ReadDoubleWord from non existing peripheral at 0x20000.\n")
 if mode.startswith("native_"):
     (out / "emulator.log").write_text({"native_panic": "PANIC: guest crashed",
                                       "native_panicked": "guest panicked at main.rs:1",
@@ -259,6 +263,23 @@ class AdapterTests(unittest.TestCase):
                 result = self.invoke("renode")
                 self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
                 self.assert_stopped(int((self.root / "child-pid").read_text()))
+
+    def test_strict_mmio_rejects_native_warnings_and_invalid_selection(self):
+        self.runtime()
+        self.env.update(FAKE_MODE="unmapped", VOLN_VP_STRICT_MMIO="1")
+        self.assertEqual(self.invoke("renode").returncode, 1)
+        self.env["VOLN_VP_STRICT_MMIO"] = "0"
+        self.assertEqual(self.invoke("renode").returncode, 0)
+        self.env["VOLN_VP_STRICT_MMIO"] = "invalid"
+        self.assertEqual(self.invoke("renode").returncode, 2)
+        self.env["VOLN_VP_STRICT_MMIO"] = "1"
+        self.env.pop("VOLN_VP_SCENARIO")
+        self.env["VOLN_VP_TEST_MODE"] = "boot"
+        self.assertEqual(self.invoke("renode").returncode, 1)
+        self.assertEqual(self.invoke("renode", "test", "--", "-e", "logLevel 3").returncode, 2)
+        self.assertEqual(self.invoke("qemu").returncode, 2)
+        qemu_report, = (r for r in self.reports() if r["backend"] == "qemu")
+        self.assertEqual(qemu_report["outcome"], "unsupported")
 
     def test_version_failure_retains_diagnostic(self):
         self.env["FAKE_MODE"] = "version_exit"
