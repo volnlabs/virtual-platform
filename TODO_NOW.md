@@ -4,6 +4,13 @@ plans: docs/superpowers/plans/2026-09-30-runtime-testing-platform.md
 this file is the at-a-glance tracker
 follow the spec's phase order. stop gates between phases are real.
 
+2026-10-01 — RP1 digital pad gates
+  [x] strict PADS_BANK0 GPIO0–27 region, reset values and atomic aliases
+  [x] OD gates captured drive; IE gates samples with an explicit unit policy
+  [x] native driver-write sequence, reset, invalid-access and negative-assertion checks
+  [ ] analog pads, clocked inputs, PWM mux, PCIe and real guest-driver integration
+  Scope: docs/contracts/rp1-gpio-model.md. Digital unit evidence, not hardware qualification.
+
 2026-10-01 — RP1 RIO output source
   [x] separate strict RIO OUT/OE region and atomic aliases feed GPIO function 5
   [x] normal/inverse/forced output overrides and IO_BANK0 setup-write sequence

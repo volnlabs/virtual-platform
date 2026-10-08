@@ -13,6 +13,7 @@ Unknown Registers And Read Only Writes Fail
     END
 
 Unsupported Fields Cannot Mutate Control Or Clear Events
+    Execute Command    sysbus WriteDoubleWord 0x32004 0x40
     Execute Command    sysbus.gpio OnGPIO 0 true
     FOR    ${value}    IN    0x80    0x0100009f    0x0001009f    0x4000009f    0x0000001f    0x3000009f
         Run Keyword And Expect Error    *RP1_GPIO_UNSUPPORTED*    Execute Command    sysbus WriteDoubleWord 0x10004 ${value}
@@ -76,8 +77,37 @@ RIO Widths And Alignment Fail Through Named Bus Region
     ${failures}=    Execute Command    sysbus.gpio CoverageFailures
     Should Be Equal As Integers    ${failures}    8
 
+Pad Unsupported Registers And Bits Cannot Change Gates
+    Execute Command    sysbus WriteDoubleWord 0x10004 0xf085
+    Execute Command    sysbus.gpio OnGPIO 0 true
+    FOR    ${offset}    IN    0    0x74    0x1000    0x2074    0x3074
+        ${address}=    Evaluate    0x30000 + ${offset}
+        Run Keyword And Expect Error    *RP1_GPIO_UNSUPPORTED*    Execute Command    sysbus ReadDoubleWord ${address}
+        Run Keyword And Expect Error    *RP1_GPIO_UNSUPPORTED*    Execute Command    sysbus WriteDoubleWord ${address} 0
+    END
+    FOR    ${address}    IN    0x30004    0x31004    0x32004    0x33004
+        Run Keyword And Expect Error    *RP1_GPIO_UNSUPPORTED*    Execute Command    sysbus WriteDoubleWord ${address} 0x10040
+        ${pad}=    Execute Command    sysbus ReadDoubleWord 0x30004
+        Should Be Equal As Integers    ${pad}    0x9a
+        ${state}=    Execute Command    sysbus.gpio GetPinState 0
+        Should Contain    ${state}    drive=disabled
+        Should Contain    ${state}    input=False
+    END
+
+Pad Widths And Alignment Fail Through Named Bus Region
+    FOR    ${width}    IN    Byte    Word    QuadWord
+        Run Keyword And Expect Error    *RP1_GPIO_UNSUPPORTED*    Execute Command    sysbus Read${width} 0x30004
+        Run Keyword And Expect Error    *RP1_GPIO_UNSUPPORTED*    Execute Command    sysbus Write${width} 0x30004 0
+    END
+    Run Keyword And Expect Error    *RP1_GPIO_UNSUPPORTED*    Execute Command    sysbus ReadDoubleWord 0x30005
+    Run Keyword And Expect Error    *RP1_GPIO_UNSUPPORTED*    Execute Command    sysbus WriteDoubleWord 0x30005 0
+    ${failures}=    Execute Command    sysbus.gpio CoverageFailures
+    Should Be Equal As Integers    ${failures}    8
+    ${pad}=    Execute Command    sysbus ReadDoubleWord 0x30004
+    Should Be Equal As Integers    ${pad}    0x9a
+
 *** Keywords ***
 Create GPIO
     Execute Command    include "${MODEL_FILE}"
     Execute Command    mach create
-    Execute Command    machine LoadPlatformDescriptionFromString "gpio: GPIOPort.RP1_GPIO @ { sysbus 0x10000; sysbus new Bus.BusMultiRegistration { address: 0x20000; size: 0x4000; region: \\"rio\\" } }"
+    Execute Command    machine LoadPlatformDescriptionFromString "gpio: GPIOPort.RP1_GPIO @ { sysbus 0x10000; sysbus new Bus.BusMultiRegistration { address: 0x20000; size: 0x4000; region: \\"rio\\" }; sysbus new Bus.BusMultiRegistration { address: 0x30000; size: 0x4000; region: \\"pads\\" } }"
