@@ -4,6 +4,12 @@ plans: docs/superpowers/plans/2026-09-30-runtime-testing-platform.md
 this file is the at-a-glance tracker
 follow the spec's phase order. stop gates between phases are real.
 
+2026-10-01 — RP1 RIO output source
+  [x] separate strict RIO OUT/OE region and atomic aliases feed GPIO function 5
+  [x] normal/inverse/forced output overrides and IO_BANK0 setup-write sequence
+  [ ] clocked RIO input, pads, alternate mux, PCIe and real guest-driver integration
+  Scope: docs/contracts/rp1-gpio-model.md. Zero RIO reset is a unit-profile preset, not hardware evidence.
+
 2026-10-01 — isolated RP1 GPIO model slice
   [x] strict unfiltered IO_BANK0 registers, atomic aliases and forced-output capture
   [x] conditioned input samples, edge latches, live levels and native IRQ masking/ack
